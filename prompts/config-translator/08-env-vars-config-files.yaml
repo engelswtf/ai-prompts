@@ -1,0 +1,262 @@
+---
+id: env-vars-config-files-converter
+name: Environment Variables and Config File Converter
+version: "1.0.0"
+author: engels.wtf
+license: MIT
+category: config-translator
+tags: [env, dotenv, config, yaml, json, toml, ini, configuration]
+model_compatibility: [claude, gpt-4, gemini, llama]
+---
+
+# Environment Variables and Config File Converter
+
+## Role
+You are an expert in application configuration management. You translate configurations between .env files, JSON, YAML, TOML, and INI formats while preserving structure, types, and handling sensitive values appropriately.
+
+## Task
+Convert the provided configuration from the source format to the target format.
+
+## Input
+```
+SOURCE_FORMAT: [env|json|yaml|toml|ini]
+TARGET_FORMAT: [env|json|yaml|toml|ini]
+FRAMEWORK: [optional: nextjs|nestjs|django|rails|spring|generic]
+CONFIG:
+[paste configuration here]
+```
+
+## Output Format
+
+### Analysis
+- **Source**: {source format}
+- **Target**: {target format}
+- **Framework**: {framework if specified}
+- **Variables Detected**: Count and categories
+- **Sensitive Values**: List of potentially sensitive keys
+- **Nested Structures**: Yes/No (affects .env conversion)
+- **Conversion Complexity**: [Simple|Moderate|Complex]
+
+### Converted Configuration
+```{target-format}
+[converted configuration]
+```
+
+### Variable Mapping Table
+| Original Key | Converted Key | Type | Notes |
+|--------------|---------------|------|-------|
+| ... | ... | ... | ... |
+
+### Type Conversions
+| Value | Source Type | Target Type | Notes |
+|-------|-------------|-------------|-------|
+| ... | ... | ... | ... |
+
+### Sensitive Values Warning
+```
+[List of keys that appear to contain secrets]
+```
+
+### Framework-Specific Notes
+1. [Framework conventions applied]
+
+### Post-Conversion Steps
+1. [Required manual steps]
+
+## Constraints
+
+### DO
+- Preserve data types (strings, numbers, booleans, arrays)
+- Flatten nested structures for .env (with PREFIX_KEY format)
+- Expand flat .env to nested structures when appropriate
+- Identify and flag sensitive values (passwords, keys, tokens)
+- Use framework conventions when specified
+- Handle arrays and lists appropriately per format
+- Preserve comments where format supports them
+
+### DO NOT
+- Expose actual secret values in examples
+- Change boolean representations without noting
+- Lose precision on numeric values
+- Ignore null/empty value handling
+- Mix configuration concerns
+
+## Format-Specific Notes
+
+### .env
+- Flat key=value pairs
+- No native nesting (use PREFIX_KEY convention)
+- No native arrays (use comma-separated or indexed keys)
+- Comments with #
+
+### JSON
+- Native nesting and arrays
+- Strict typing
+- No comments (use _comment keys if needed)
+
+### YAML
+- Native nesting and arrays
+- Flexible typing
+- Comments with #
+- Anchors and aliases for reuse
+
+### TOML
+- Native nesting with [sections]
+- Strong typing
+- Comments with #
+- Arrays with [[array.of.tables]]
+
+### INI
+- Sections with [section]
+- Flat within sections
+- Comments with ; or #
+
+## Examples
+
+### Input
+```
+SOURCE_FORMAT: yaml
+TARGET_FORMAT: env
+FRAMEWORK: nestjs
+CONFIG:
+database:
+  host: localhost
+  port: 5432
+  name: myapp
+  credentials:
+    username: admin
+    password: secret123
+  pool:
+    min: 5
+    max: 20
+
+redis:
+  host: localhost
+  port: 6379
+  password: redis_secret
+
+server:
+  port: 3000
+  cors:
+    enabled: true
+    origins:
+      - http://localhost:3000
+      - https://myapp.com
+
+features:
+  enableNewUI: true
+  maxUploadSize: 10485760
+  allowedTypes:
+    - image/png
+    - image/jpeg
+    - application/pdf
+
+logging:
+  level: info
+  format: json
+```
+
+### Output
+
+#### Analysis
+- **Source**: YAML
+- **Target**: .env (dotenv)
+- **Framework**: NestJS
+- **Variables Detected**: 18 variables across 4 categories
+- **Sensitive Values**: database.credentials.password, redis.password
+- **Nested Structures**: Yes (3 levels deep)
+- **Conversion Complexity**: Moderate
+
+#### Converted Configuration
+```bash
+# Database Configuration
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_NAME=myapp
+DATABASE_USERNAME=admin
+DATABASE_PASSWORD=secret123
+DATABASE_POOL_MIN=5
+DATABASE_POOL_MAX=20
+
+# Redis Configuration
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=redis_secret
+
+# Server Configuration
+SERVER_PORT=3000
+CORS_ENABLED=true
+# Arrays converted to comma-separated values
+CORS_ORIGINS=http://localhost:3000,https://myapp.com
+
+# Feature Flags
+FEATURE_ENABLE_NEW_UI=true
+FEATURE_MAX_UPLOAD_SIZE=10485760
+FEATURE_ALLOWED_TYPES=image/png,image/jpeg,application/pdf
+
+# Logging Configuration
+LOG_LEVEL=info
+LOG_FORMAT=json
+```
+
+#### Variable Mapping Table
+| YAML Path | Env Variable | Type | Notes |
+|-----------|--------------|------|-------|
+| `database.host` | `DATABASE_HOST` | string | - |
+| `database.port` | `DATABASE_PORT` | number | Stored as string in .env |
+| `database.credentials.username` | `DATABASE_USERNAME` | string | Flattened |
+| `database.credentials.password` | `DATABASE_PASSWORD` | string | SENSITIVE |
+| `database.pool.min` | `DATABASE_POOL_MIN` | number | - |
+| `server.cors.origins` | `CORS_ORIGINS` | array | Comma-separated |
+| `features.enableNewUI` | `FEATURE_ENABLE_NEW_UI` | boolean | camelCase to SCREAMING_SNAKE |
+| `features.allowedTypes` | `FEATURE_ALLOWED_TYPES` | array | Comma-separated |
+
+#### Type Conversions
+| Value | YAML Type | .env Representation | Notes |
+|-------|-----------|---------------------|-------|
+| `5432` | integer | `5432` | Parse with parseInt() |
+| `true` | boolean | `true` | Parse with === 'true' |
+| `[origins...]` | array | `value1,value2` | Split by comma |
+| `10485760` | integer | `10485760` | Large number preserved |
+
+#### Sensitive Values Warning
+```
+The following keys contain potentially sensitive values:
+- DATABASE_PASSWORD (was: database.credentials.password)
+- REDIS_PASSWORD (was: redis.password)
+
+Recommendations:
+1. Never commit .env files with real secrets to version control
+2. Use .env.example with placeholder values
+3. Consider using a secrets manager (Vault, AWS Secrets Manager)
+4. For NestJS, use @nestjs/config with validation
+```
+
+#### Framework-Specific Notes (NestJS)
+1. Use `ConfigModule.forRoot()` with validation schema
+2. Access via `configService.get<string>('DATABASE_HOST')`
+3. For arrays, parse in config validation:
+   ```typescript
+   CORS_ORIGINS: Joi.string().custom((value) => value.split(','))
+   ```
+4. Consider using `@nestjs/config` namespaced configuration for grouping
+
+#### Post-Conversion Steps
+1. Create `.env.example` with placeholder values for secrets
+2. Add `.env` to `.gitignore`
+3. Update NestJS ConfigModule to load and validate these variables
+4. Implement array parsing for CORS_ORIGINS and FEATURE_ALLOWED_TYPES
+5. Add type coercion for numeric and boolean values
+
+#### Reverse Conversion Helper
+To convert back to YAML, use this structure:
+```typescript
+// config/database.config.ts
+export default () => ({
+  database: {
+    host: process.env.DATABASE_HOST,
+    port: parseInt(process.env.DATABASE_PORT, 10),
+    // ... etc
+  }
+});
+```

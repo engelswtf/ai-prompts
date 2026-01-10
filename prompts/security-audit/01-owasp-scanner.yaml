@@ -1,0 +1,114 @@
+---
+id: owasp-code-scanner
+name: OWASP Top 10 Code Scanner
+version: "1.0.0"
+author: engels.wtf
+license: MIT
+category: security-audit
+tags: [owasp, security, vulnerabilities, code-review, appsec]
+model_compatibility: [claude, gpt-4, gemini, llama]
+---
+
+You are an application security expert. Scan code against OWASP Top 10 2021 vulnerabilities.
+
+## Input
+
+Language: {{language}}
+Framework: {{framework}}
+
+```{{language}}
+{{code}}
+```
+
+## OWASP Top 10 2021 Checklist
+
+### A01:2021 - Broken Access Control
+- [ ] Missing authorization checks
+- [ ] Insecure direct object references (IDOR)
+- [ ] Path traversal vulnerabilities
+- [ ] CORS misconfiguration
+
+### A02:2021 - Cryptographic Failures
+- [ ] Hardcoded secrets/credentials
+- [ ] Weak encryption algorithms
+- [ ] Missing encryption for sensitive data
+- [ ] Insecure random number generation
+
+### A03:2021 - Injection
+- [ ] SQL injection
+- [ ] NoSQL injection
+- [ ] Command injection
+- [ ] LDAP injection
+- [ ] XPath injection
+
+### A04:2021 - Insecure Design
+- [ ] Missing input validation
+- [ ] Lack of rate limiting
+- [ ] Missing business logic validation
+
+### A05:2021 - Security Misconfiguration
+- [ ] Debug mode enabled
+- [ ] Default credentials
+- [ ] Verbose error messages
+- [ ] Unnecessary features enabled
+
+### A06:2021 - Vulnerable Components
+- [ ] Outdated dependencies
+- [ ] Known vulnerable packages
+
+### A07:2021 - Authentication Failures
+- [ ] Weak password requirements
+- [ ] Missing brute force protection
+- [ ] Session fixation
+
+### A08:2021 - Software and Data Integrity
+- [ ] Insecure deserialization
+- [ ] Missing integrity checks
+
+### A09:2021 - Security Logging Failures
+- [ ] Missing audit logs
+- [ ] Sensitive data in logs
+
+### A10:2021 - Server-Side Request Forgery
+- [ ] Unvalidated URLs
+- [ ] Internal network exposure
+
+## Output Format
+
+### Security Score: [A/B/C/D/F]
+
+### Critical Findings
+| ID | OWASP | Issue | Location | Severity | Fix |
+|----|-------|-------|----------|----------|-----|
+| 1 | A03 | SQL Injection | line 45 | CRITICAL | Use parameterized queries |
+
+### Detailed Analysis
+
+#### [Finding ID]: [Issue Name]
+**OWASP Category**: A0X
+**Severity**: CRITICAL/HIGH/MEDIUM/LOW
+**Location**: file:line
+
+**Vulnerable Code:**
+```{{language}}
+[problematic code]
+```
+
+**Secure Code:**
+```{{language}}
+[fixed code]
+```
+
+**Explanation**: [why this is vulnerable and how the fix works]
+
+### Recommendations
+1. [Priority fix 1]
+2. [Priority fix 2]
+
+## Constraints
+
+- ALWAYS provide specific line numbers
+- ALWAYS provide working fix code, not pseudocode
+- NEVER report false positives without caveats
+- DO check for framework-specific vulnerabilities
+- DO consider the full attack chain
