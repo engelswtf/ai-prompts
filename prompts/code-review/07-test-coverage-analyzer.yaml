@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: code-review
 tags: [testing, coverage, unit-tests, edge-cases, tdd]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # Test Coverage Analyzer

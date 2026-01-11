@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: config-translator
 tags: [terraform, pulumi, cloudformation, iac, aws, infrastructure, devops]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # Infrastructure as Code Converter

@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: documentation
 tags: [readme, documentation, markdown, github]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # README Generator

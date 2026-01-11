@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: debugging
 tags: [performance, profiling, optimization, latency, throughput]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # Performance Bottleneck Finder

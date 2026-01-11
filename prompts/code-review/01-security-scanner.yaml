@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: code-review
 tags: [security, vulnerability, owasp, code-review]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # Security Vulnerability Scanner

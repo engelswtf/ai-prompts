@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: security-audit
 tags: [security, encryption, cryptography, tls, hashing, keys, certificates]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # Encryption and Cryptography Auditor

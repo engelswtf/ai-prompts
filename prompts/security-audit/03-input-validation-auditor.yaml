@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: security-audit
 tags: [security, injection, xss, sql-injection, input-validation, sanitization]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # Input Validation Security Auditor

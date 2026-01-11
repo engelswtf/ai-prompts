@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: debugging
 tags: [concurrency, race-condition, threading, async, deadlock]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # Race Condition Finder

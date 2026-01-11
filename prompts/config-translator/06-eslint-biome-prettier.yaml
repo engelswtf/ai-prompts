@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: config-translator
 tags: [eslint, biome, prettier, linting, formatting, javascript, typescript]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # Linter and Formatter Configuration Converter

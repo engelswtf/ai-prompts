@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: log-analysis
 tags: [errors, frequency, patterns, monitoring, alerts]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # Error Frequency Analyzer

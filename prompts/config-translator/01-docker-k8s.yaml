@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: config-translator
 tags: [docker, kubernetes, k8s, docker-compose, migration]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # Docker Compose to Kubernetes Converter

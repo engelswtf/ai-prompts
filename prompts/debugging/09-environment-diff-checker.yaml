@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: debugging
 tags: [environment, configuration, dev-prod, deployment, infrastructure]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # Environment Diff Checker

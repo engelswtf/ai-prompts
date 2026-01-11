@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: debugging
 tags: [api, http, rest, error-codes, troubleshooting]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # API Error Decoder

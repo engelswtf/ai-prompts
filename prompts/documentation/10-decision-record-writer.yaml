@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: documentation
 tags: [adr, architecture, decisions, documentation, governance]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # Decision Record Writer

@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: config-translator
 tags: [env, dotenv, config, yaml, json, toml, ini, configuration]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # Environment Variables and Config File Converter

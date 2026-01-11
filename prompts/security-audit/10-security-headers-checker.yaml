@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: security-audit
 tags: [security, http, headers, csp, cors, hsts, xss, clickjacking]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # HTTP Security Headers Checker

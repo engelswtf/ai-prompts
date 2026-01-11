@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: config-translator
 tags: [json, yaml, toml, config, conversion]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # JSON/YAML/TOML Configuration Converter

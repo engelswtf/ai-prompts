@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: debugging
 tags: [git, merge-conflict, version-control, collaboration]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # Git Conflict Resolver

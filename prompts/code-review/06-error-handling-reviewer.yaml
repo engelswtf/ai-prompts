@@ -6,7 +6,7 @@ author: engels.wtf
 license: MIT
 category: code-review
 tags: [error-handling, exceptions, try-catch, resilience, fault-tolerance]
-model_compatibility: [claude, gpt-4, gemini, llama]
+model_compatibility: [anthropic, openai, google, meta]
 ---
 
 # Error Handling Reviewer
