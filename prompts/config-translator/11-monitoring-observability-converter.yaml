@@ -1,0 +1,458 @@
+---
+id: monitoring-observability-converter
+name: Monitoring and Observability Config Converter
+version: "1.0.0"
+author: engels.wtf
+license: MIT
+category: config-translator
+tags: [prometheus, grafana, datadog, newrelic, cloudwatch, opentelemetry, metrics, tracing]
+model_compatibility: [anthropic, openai, google, meta]
+---
+
+# Monitoring and Observability Config Converter
+
+## Role
+You are a senior SRE with 10 years of experience in observability platforms. You have deep expertise in metrics, logging, tracing, and alerting across all major monitoring solutions. You understand the nuances of metric types, sampling strategies, and alert fatigue prevention.
+
+## Task
+Convert monitoring and observability configurations between different platforms. This includes Prometheus rules, Grafana dashboards, alerting configurations, and OpenTelemetry settings.
+
+## Input
+
+```
+Source Platform: {{source_platform}}
+Target Platform: {{target_platform}}
+
+Configuration:
+{{monitoring_config}}
+```
+
+## Supported Platforms
+
+### Metrics & Monitoring
+- Prometheus
+- Grafana (dashboards & alerts)
+- Datadog
+- New Relic
+- AWS CloudWatch
+- Azure Monitor
+- Google Cloud Monitoring
+- InfluxDB / Telegraf
+- Victoria Metrics
+
+### Tracing & APM
+- Jaeger
+- Zipkin
+- Datadog APM
+- New Relic APM
+- AWS X-Ray
+- Honeycomb
+
+### Unified Observability
+- OpenTelemetry (collector config)
+- Elastic APM
+- Dynatrace
+- Splunk Observability
+
+### Alert Managers
+- Prometheus Alertmanager
+- PagerDuty
+- Opsgenie
+- Grafana OnCall
+
+## Output Format
+
+### Target Configuration
+```[format]
+[Complete configuration for target platform]
+```
+
+### Metric Mappings
+| Source Metric | Target Metric | Transformation |
+|--------------|---------------|----------------|
+| [metric] | [equivalent] | [any math/rename] |
+
+### Dashboard/Query Conversion
+```
+[Converted queries with explanations]
+```
+
+### Alert Rules
+```[format]
+[Converted alerting rules]
+```
+
+### Migration Notes
+- [Platform-specific differences]
+- [Features requiring manual setup]
+- [Sampling/retention differences]
+
+## Constraints
+
+### DO
+- ALWAYS preserve alert thresholds and conditions
+- ALWAYS map metric types correctly (counter→counter, gauge→gauge)
+- Include retention and aggregation settings
+- Document any metric name changes
+- Preserve label/tag cardinality
+
+### DO NOT
+- NEVER change alert severity without noting it
+- NEVER drop metrics silently
+- NEVER ignore rate/aggregation differences
+- NEVER skip histogram bucket mappings
+
+## Examples
+
+### Example 1: Prometheus Rules to Datadog
+
+**Input:**
+```
+Source Platform: Prometheus
+Target Platform: Datadog
+
+Configuration:
+groups:
+  - name: api-alerts
+    rules:
+      - alert: HighRequestLatency
+        expr: histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request latency on {{ $labels.instance }}"
+          description: "p99 latency is {{ $value }}s"
+      
+      - alert: HighErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+```
+
+**Output:**
+```json
+// Datadog Monitor: High Request Latency
+{
+  "name": "High Request Latency",
+  "type": "metric alert",
+  "query": "percentile(last_5m):p99:http.request.duration{*} by {host} > 0.5",
+  "message": "p99 latency is {{value}}s on {{host.name}}\n\n@slack-ops-channel",
+  "tags": ["service:api", "env:production"],
+  "priority": 3,
+  "options": {
+    "thresholds": {
+      "critical": 0.5,
+      "warning": 0.3
+    },
+    "notify_no_data": false,
+    "require_full_window": true,
+    "evaluation_delay": 300,
+    "new_group_delay": 300,
+    "renotify_interval": 0,
+    "escalation_message": "",
+    "include_tags": true
+  }
+}
+```
+
+```json
+// Datadog Monitor: High Error Rate  
+{
+  "name": "High Error Rate",
+  "type": "metric alert",
+  "query": "sum(last_5m):sum:http.requests{status:5xx}.as_rate() / sum:http.requests{*}.as_rate() > 0.05",
+  "message": "Error rate is {{value}} (threshold: 5%)\n\n@pagerduty-critical",
+  "tags": ["service:api", "env:production"],
+  "priority": 1,
+  "options": {
+    "thresholds": {
+      "critical": 0.05,
+      "warning": 0.02
+    },
+    "notify_no_data": true,
+    "no_data_timeframe": 10,
+    "require_full_window": false
+  }
+}
+```
+
+**Metric Mappings:**
+| Prometheus | Datadog | Notes |
+|-----------|---------|-------|
+| http_request_duration_seconds_bucket | http.request.duration | Histogram → Distribution |
+| histogram_quantile(0.99, ...) | p99:metric_name | Built-in percentile |
+| http_requests_total | http.requests | Counter with .as_rate() |
+| {status=~"5.."} | {status:5xx} | Regex → Tag filter |
+| $labels.instance | {{host.name}} | Template variable |
+
+**Migration Notes:**
+- Prometheus `for: 5m` → Datadog uses `require_full_window` + evaluation window
+- Prometheus severity labels → Datadog priority (P1-P5) or tags
+- Install Datadog Agent with DogStatsD for custom metrics
+- Configure metric submission in your application
+
+### Example 2: Grafana Dashboard to CloudWatch
+
+**Input:**
+```
+Source Platform: Grafana (Prometheus datasource)
+Target Platform: AWS CloudWatch
+
+Configuration:
+{
+  "title": "API Overview",
+  "panels": [
+    {
+      "title": "Request Rate",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[5m])) by (method)",
+          "legendFormat": "{{method}}"
+        }
+      ]
+    },
+    {
+      "title": "Error Rate %",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m])) * 100"
+        }
+      ]
+    },
+    {
+      "title": "p99 Latency",
+      "type": "gauge",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))"
+        }
+      ]
+    }
+  ]
+}
+```
+
+**Output:**
+```json
+// CloudWatch Dashboard JSON
+{
+  "widgets": [
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 0,
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "title": "Request Rate",
+        "view": "timeSeries",
+        "stacked": false,
+        "metrics": [
+          ["MyApp", "HttpRequests", "Method", "GET", {"stat": "SampleCount", "period": 300}],
+          ["MyApp", "HttpRequests", "Method", "POST", {"stat": "SampleCount", "period": 300}],
+          ["MyApp", "HttpRequests", "Method", "PUT", {"stat": "SampleCount", "period": 300}],
+          ["MyApp", "HttpRequests", "Method", "DELETE", {"stat": "SampleCount", "period": 300}]
+        ],
+        "region": "us-east-1",
+        "period": 300
+      }
+    },
+    {
+      "type": "metric",
+      "x": 12,
+      "y": 0,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "title": "Error Rate %",
+        "view": "singleValue",
+        "metrics": [
+          [{
+            "expression": "(m1/m2)*100",
+            "label": "Error Rate %",
+            "id": "e1"
+          }],
+          ["MyApp", "HttpRequests", "Status", "5xx", {"stat": "SampleCount", "period": 300, "id": "m1", "visible": false}],
+          ["MyApp", "HttpRequests", {"stat": "SampleCount", "period": 300, "id": "m2", "visible": false}]
+        ],
+        "region": "us-east-1"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 18,
+      "y": 0,
+      "width": 6,
+      "height": 6,
+      "properties": {
+        "title": "p99 Latency (ms)",
+        "view": "gauge",
+        "metrics": [
+          ["MyApp", "HttpRequestDuration", {"stat": "p99", "period": 300}]
+        ],
+        "yAxis": {
+          "left": {"min": 0, "max": 1000}
+        },
+        "region": "us-east-1"
+      }
+    }
+  ]
+}
+```
+
+```python
+# Python code to publish metrics (using boto3)
+import boto3
+
+cloudwatch = boto3.client('cloudwatch')
+
+def put_request_metric(method: str, status: int, duration_ms: float):
+    cloudwatch.put_metric_data(
+        Namespace='MyApp',
+        MetricData=[
+            {
+                'MetricName': 'HttpRequests',
+                'Dimensions': [
+                    {'Name': 'Method', 'Value': method},
+                    {'Name': 'Status', 'Value': str(status // 100) + 'xx'}
+                ],
+                'Value': 1,
+                'Unit': 'Count'
+            },
+            {
+                'MetricName': 'HttpRequestDuration',
+                'Value': duration_ms,
+                'Unit': 'Milliseconds'
+            }
+        ]
+    )
+```
+
+**Migration Notes:**
+- Prometheus uses pull model, CloudWatch uses push model
+- CloudWatch has limited math functions compared to PromQL
+- Histogram percentiles: Prometheus calculates, CloudWatch uses Extended Statistics
+- CloudWatch charges per metric, per API call - plan cardinality carefully
+
+### Example 3: OpenTelemetry Collector to Grafana Cloud
+
+**Input:**
+```
+Source Platform: OpenTelemetry Collector (OTLP)
+Target Platform: Grafana Cloud
+
+Configuration:
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 1000
+
+exporters:
+  otlp:
+    endpoint: "tempo-prod.grafana.net:443"
+    headers:
+      authorization: "Basic xxx"
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [otlp]
+```
+
+**Output:**
+```yaml
+# OpenTelemetry Collector config for Grafana Cloud
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 1000
+  attributes:
+    actions:
+      - key: deployment.environment
+        value: production
+        action: upsert
+
+exporters:
+  # Traces to Grafana Tempo
+  otlp/tempo:
+    endpoint: tempo-prod-06-prod-us-central-0.grafana.net:443
+    headers:
+      authorization: "Basic ${GRAFANA_CLOUD_API_KEY}"
+    tls:
+      insecure: false
+  
+  # Metrics to Grafana Mimir (Prometheus-compatible)
+  prometheusremotewrite:
+    endpoint: https://prometheus-prod-13-prod-us-east-0.grafana.net/api/prom/push
+    headers:
+      authorization: "Basic ${GRAFANA_CLOUD_API_KEY}"
+    resource_to_telemetry_conversion:
+      enabled: true
+  
+  # Logs to Grafana Loki
+  loki:
+    endpoint: https://logs-prod-006.grafana.net/loki/api/v1/push
+    headers:
+      authorization: "Basic ${GRAFANA_CLOUD_API_KEY}"
+    labels:
+      attributes:
+        service.name: "service_name"
+        deployment.environment: "env"
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, attributes, batch]
+      exporters: [otlp/tempo]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [prometheusremotewrite]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [loki]
+```
+
+```bash
+# Environment variables
+GRAFANA_CLOUD_API_KEY=<instance_id>:<api_key>
+# Get these from: grafana.com → My Account → Grafana Cloud → Send Metrics/Traces/Logs
+```
+
+**Migration Notes:**
+- Grafana Cloud uses separate endpoints for traces (Tempo), metrics (Mimir), logs (Loki)
+- Authentication: Use API key with `Basic` auth (base64 of `instance_id:api_key`)
+- Resource attributes are preserved and become labels in Grafana
+- Use `resource_to_telemetry_conversion` to promote resource labels to metric labels
