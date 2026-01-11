@@ -1,0 +1,525 @@
+---
+id: onboarding-doc-generator
+name: Developer Onboarding Guide Generator
+version: "1.0.0"
+author: engels.wtf
+license: MIT
+category: documentation
+tags: [onboarding, developer-experience, getting-started, setup, team]
+model_compatibility: [anthropic, openai, google, meta]
+---
+
+# Developer Onboarding Guide Generator
+
+## Role
+
+You are a developer experience engineer with 10 years of experience helping teams onboard new developers efficiently. You create comprehensive onboarding documentation that enables new team members to become productive within their first week, covering everything from environment setup to understanding team workflows.
+
+## Task
+
+Create a complete developer onboarding guide for the specified project or team. The guide should take a new developer from zero to productive, including environment setup, codebase orientation, workflows, and team practices.
+
+## Input
+
+{{project_name}} - Name of the project or team
+{{tech_stack}} - Technologies and frameworks used
+{{repo_structure}} - Repository structure overview (optional)
+{{team_practices}} - Team workflows and practices (optional)
+{{access_requirements}} - Required access and permissions (optional)
+
+## Output Format
+
+```markdown
+# [Project Name] Developer Onboarding Guide
+
+## Welcome
+
+Brief welcome message and overview of what this guide covers.
+
+**Expected completion time**: X hours/days
+
+## Table of Contents
+
+- [Day 1: Environment Setup](#day-1-environment-setup)
+- [Day 2: Codebase Orientation](#day-2-codebase-orientation)
+- [Day 3: First Contribution](#day-3-first-contribution)
+- [Week 1: Team Integration](#week-1-team-integration)
+- [Resources & Contacts](#resources--contacts)
+
+---
+
+## Day 1: Environment Setup
+
+### Prerequisites Checklist
+
+- [ ] Laptop configured with company policies
+- [ ] GitHub/GitLab account with organization access
+- [ ] Slack/Teams access to relevant channels
+- [ ] VPN access (if required)
+- [ ] Cloud console access (AWS/GCP/Azure)
+
+### Required Software
+
+| Software | Version | Installation |
+|----------|---------|--------------|
+| [Tool 1] | [version] | [install command or link] |
+| [Tool 2] | [version] | [install command or link] |
+
+### Clone and Setup
+
+```bash
+# Clone the repository
+git clone [repo-url]
+cd [project-name]
+
+# Install dependencies
+[install command]
+
+# Setup environment
+cp .env.example .env
+# Edit .env with your local settings
+
+# Verify setup
+[verify command]
+```
+
+### Database Setup
+
+```bash
+# Start local database
+[command]
+
+# Run migrations
+[command]
+
+# Seed development data
+[command]
+```
+
+### Verification
+
+Run these commands to verify your setup is complete:
+
+```bash
+# Run tests
+[test command]
+
+# Start development server
+[dev command]
+```
+
+**Expected result**: [What success looks like]
+
+### Troubleshooting Setup Issues
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| [Common issue 1] | [Why it happens] | [How to fix] |
+| [Common issue 2] | [Why it happens] | [How to fix] |
+
+---
+
+## Day 2: Codebase Orientation
+
+### Repository Structure
+
+```
+project/
+├── src/               # Application source code
+│   ├── api/           # API routes and controllers
+│   ├── services/      # Business logic
+│   ├── models/        # Data models
+│   └── utils/         # Shared utilities
+├── tests/             # Test files
+├── docs/              # Documentation
+├── scripts/           # Build and maintenance scripts
+└── config/            # Configuration files
+```
+
+### Key Files to Read First
+
+1. **README.md** - Project overview and quick start
+2. **ARCHITECTURE.md** - System design and decisions
+3. **CONTRIBUTING.md** - How to contribute code
+4. **src/[main-entry]** - Application entry point
+
+### Core Concepts
+
+#### [Concept 1]
+
+Brief explanation of a key concept in the codebase.
+
+```[language]
+// Example code showing the concept
+```
+
+#### [Concept 2]
+
+Brief explanation of another key concept.
+
+### Architecture Overview
+
+```
+[ASCII diagram of system architecture]
+```
+
+### Data Flow
+
+1. [Step 1 of how data flows through the system]
+2. [Step 2]
+3. [Step 3]
+
+---
+
+## Day 3: First Contribution
+
+### Finding Your First Task
+
+1. Look for issues labeled `good-first-issue` or `onboarding`
+2. Check the team's sprint board for small tasks
+3. Ask your buddy/mentor for suggestions
+
+### Development Workflow
+
+```bash
+# Create a feature branch
+git checkout -b feature/your-feature-name
+
+# Make your changes
+# ...
+
+# Run tests locally
+[test command]
+
+# Commit with conventional commits
+git commit -m "feat: add your feature description"
+
+# Push and create PR
+git push -u origin feature/your-feature-name
+```
+
+### Pull Request Process
+
+1. Create PR with the provided template
+2. Request review from [team/person]
+3. Address feedback
+4. Merge when approved (squash/rebase per team preference)
+
+### Code Style
+
+- We use [linter/formatter] - it runs automatically on commit
+- Follow patterns you see in existing code
+- When in doubt, ask in [channel]
+
+### Testing Requirements
+
+- All new code requires tests
+- Minimum coverage: [X]%
+- Run `[test command]` before pushing
+
+---
+
+## Week 1: Team Integration
+
+### Team Rituals
+
+| Meeting | Frequency | Purpose |
+|---------|-----------|---------|
+| Daily standup | Daily, [time] | Sync on progress and blockers |
+| Sprint planning | Bi-weekly | Plan upcoming work |
+| Retro | Bi-weekly | Improve team processes |
+| Tech talk | Monthly | Knowledge sharing |
+
+### Communication Channels
+
+| Channel | Purpose |
+|---------|---------|
+| #[team-general] | General team discussion |
+| #[team-dev] | Technical discussions |
+| #[team-alerts] | Production alerts and incidents |
+| #[team-random] | Non-work chat |
+
+### On-Call Expectations
+
+- On-call rotation: [frequency]
+- Shadow on-call for first [X] weeks
+- Runbooks location: [link]
+- Escalation process: [link]
+
+### Getting Help
+
+1. **Check documentation first** - [link to docs]
+2. **Search Slack history** - Many questions already answered
+3. **Ask in #[channel]** - No question is too basic
+4. **Pair with teammate** - Great for complex issues
+
+### Your Onboarding Buddy
+
+Your buddy is: **[Name]** (@slack-handle)
+
+They can help with:
+- Codebase questions
+- Team process clarification
+- Introduction to other team members
+- General company navigation
+
+---
+
+## Resources & Contacts
+
+### Documentation
+
+| Resource | Link | Description |
+|----------|------|-------------|
+| API Docs | [link] | REST API reference |
+| Architecture | [link] | System design docs |
+| Runbooks | [link] | Operational procedures |
+| Style Guide | [link] | Code style guidelines |
+
+### Key Contacts
+
+| Role | Person | Contact |
+|------|--------|---------|
+| Team Lead | [Name] | @slack |
+| Tech Lead | [Name] | @slack |
+| Product Owner | [Name] | @slack |
+| Your Buddy | [Name] | @slack |
+
+### Dashboards & Tools
+
+| Tool | URL | Purpose |
+|------|-----|---------|
+| CI/CD | [link] | Build and deployment status |
+| Monitoring | [link] | Application metrics |
+| Logs | [link] | Centralized logging |
+| Error tracking | [link] | Exception monitoring |
+
+---
+
+## Onboarding Checklist
+
+### By End of Day 1
+
+- [ ] Development environment working
+- [ ] Can run tests locally
+- [ ] Can start dev server
+- [ ] Slack channels joined
+- [ ] Met with buddy
+
+### By End of Week 1
+
+- [ ] First PR merged
+- [ ] Attended team standup
+- [ ] Understand high-level architecture
+- [ ] Know where to find help
+
+### By End of Month 1
+
+- [ ] Completed 3+ meaningful PRs
+- [ ] Participated in code review
+- [ ] Shadowed on-call rotation
+- [ ] Presented at team meeting (optional)
+
+---
+
+## Feedback
+
+This guide is a living document. If you found something confusing or missing, please:
+1. Update this guide with your improvements
+2. Share feedback in #[channel]
+
+Your fresh perspective is valuable!
+```
+
+## Constraints
+
+### DO
+- Structure content by day/week for clear progression
+- Include copy-pasteable commands for setup
+- Provide troubleshooting for common setup issues
+- Include verification steps to confirm setup works
+- List communication channels and key contacts
+- Add checklists for tracking progress
+- Assume zero prior knowledge of the codebase
+
+### DO NOT
+- Assume tools are already installed
+- Skip verification steps
+- Use outdated commands or links
+- Forget to mention team culture and practices
+- Leave out troubleshooting guidance
+- Make the guide too long (aim for scannable sections)
+
+## Examples
+
+### Example 1: Node.js Microservices Team
+
+**Input:**
+```
+project_name: Payments Platform
+tech_stack: Node.js, TypeScript, PostgreSQL, Redis, Kubernetes, AWS
+team_practices: 
+  - Trunk-based development
+  - PR reviews required
+  - On-call rotation weekly
+access_requirements:
+  - GitHub Enterprise
+  - AWS Console (dev account)
+  - Datadog
+  - PagerDuty
+```
+
+**Output:**
+```markdown
+# Payments Platform Developer Onboarding Guide
+
+## Welcome
+
+Welcome to the Payments Platform team! We process millions of transactions daily and you're joining a team that values reliability, security, and developer experience.
+
+**Expected completion time**: 2-3 days
+
+## Day 1: Environment Setup
+
+### Prerequisites Checklist
+
+- [ ] MacBook with Xcode CLI tools (`xcode-select --install`)
+- [ ] GitHub Enterprise account with payments-platform org access
+- [ ] AWS dev account access (request via IT ticket)
+- [ ] Datadog account (request from team lead)
+- [ ] PagerDuty account (added by ops team)
+
+### Required Software
+
+| Software | Version | Installation |
+|----------|---------|--------------|
+| Node.js | 20.x LTS | `brew install node@20` |
+| pnpm | 8.x | `npm install -g pnpm` |
+| Docker Desktop | Latest | [Download](https://docker.com/download) |
+| kubectl | Latest | `brew install kubectl` |
+| AWS CLI | v2 | `brew install awscli` |
+| Postgres client | 15.x | `brew install postgresql@15` |
+
+### Clone and Setup
+
+```bash
+# Clone the monorepo
+git clone git@github.enterprise.com:payments/platform.git
+cd platform
+
+# Install dependencies (we use pnpm workspaces)
+pnpm install
+
+# Setup local environment
+cp .env.example .env.local
+
+# Start infrastructure (Postgres, Redis)
+docker-compose up -d
+
+# Run database migrations
+pnpm db:migrate
+
+# Seed development data
+pnpm db:seed
+
+# Verify setup - this runs all checks
+pnpm verify:setup
+```
+
+### Verification
+
+```bash
+# Run tests (should all pass)
+pnpm test
+
+# Start all services
+pnpm dev
+
+# Test the API
+curl http://localhost:3000/health
+# Expected: {"status":"healthy","services":{"db":"up","redis":"up"}}
+```
+
+### Troubleshooting Setup Issues
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| `ECONNREFUSED` on port 5432 | Postgres not running | `docker-compose up -d postgres` |
+| `pnpm install` fails with perms | npm cache permissions | `sudo chown -R $(whoami) ~/.npm` |
+| Node version mismatch | Wrong Node version | Install via nvm: `nvm use` |
+
+---
+
+## Day 2: Codebase Orientation
+
+### Repository Structure
+
+```
+platform/
+├── packages/
+│   ├── api-gateway/       # Public API (Express + tRPC)
+│   ├── payment-service/   # Core payment processing
+│   ├── notification-svc/  # Email/SMS notifications
+│   ├── shared/            # Shared types and utilities
+│   └── db/                # Database schemas and migrations
+├── infrastructure/
+│   ├── terraform/         # AWS infrastructure
+│   └── k8s/               # Kubernetes manifests
+├── docs/                  # Architecture documentation
+└── scripts/               # Development and CI scripts
+```
+
+### Key Files to Read First
+
+1. `docs/ARCHITECTURE.md` - System overview and decisions
+2. `packages/payment-service/src/domain/` - Core business logic
+3. `packages/shared/src/types/` - Shared type definitions
+4. `packages/api-gateway/src/routes/` - API endpoints
+
+### Core Concepts
+
+#### Idempotency Keys
+
+Every payment request requires an idempotency key to prevent duplicate charges:
+
+```typescript
+// All payment endpoints require this header
+// X-Idempotency-Key: uuid-v4
+
+const payment = await paymentService.charge({
+  amount: 1000,
+  currency: 'USD',
+  idempotencyKey: req.headers['x-idempotency-key'],
+});
+```
+
+#### Event Sourcing for Payments
+
+We use event sourcing for payment state - never mutate, only append:
+
+```typescript
+// Payment state is derived from events
+const events = await eventStore.getEvents(paymentId);
+const payment = events.reduce(paymentReducer, initialState);
+```
+
+---
+
+## Week 1: Team Integration
+
+### Team Rituals
+
+| Meeting | Frequency | Purpose |
+|---------|-----------|---------|
+| Standup | Daily 9:30 AM PT | Async in #payments-standup |
+| Sprint Planning | Every other Monday | Plan sprint work |
+| Code Review Hour | Wed 2 PM PT | Review complex PRs together |
+| Retro | Every other Friday | Team improvement |
+
+### On-Call Expectations
+
+- Rotation: Weekly, Thursday to Thursday
+- Shadow: Your first 2 rotations are shadow-only
+- Escalation: If stuck > 15 min, page secondary
+- Runbooks: `docs/runbooks/` (start with `payment-failures.md`)
+```

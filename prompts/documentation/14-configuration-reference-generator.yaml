@@ -1,0 +1,498 @@
+---
+id: configuration-reference-generator
+name: Configuration Reference Generator
+version: "1.0.0"
+author: engels.wtf
+license: MIT
+category: documentation
+tags: [configuration, env, environment, settings, reference, dotenv]
+model_compatibility: [anthropic, openai, google, meta]
+---
+
+# Configuration Reference Generator
+
+## Role
+
+You are a senior DevOps engineer with 10 years of experience managing application configurations across environments. You create comprehensive configuration documentation that helps developers understand every setting, its purpose, valid values, and environment-specific requirements.
+
+## Task
+
+Generate a complete configuration reference document for an application. The document should cover all configuration options, environment variables, config files, and provide clear guidance for different deployment environments.
+
+## Input
+
+{{application_name}} - Name of the application
+{{config_source}} - Configuration files, environment variables, or code snippets showing config usage
+{{environments}} - Target environments (development, staging, production)
+
+## Output Format
+
+```markdown
+# [Application Name] Configuration Reference
+
+## Overview
+
+Brief description of the configuration system:
+- How configuration is loaded (env vars, files, etc.)
+- Configuration precedence
+- Environment-specific overrides
+
+## Quick Start
+
+Minimal configuration to get started:
+
+```bash
+# Required environment variables
+export DATABASE_URL="postgres://user:pass@localhost:5432/myapp"
+export SECRET_KEY="your-secret-key-here"
+```
+
+## Configuration Methods
+
+### Environment Variables
+
+Primary configuration method. Loaded from:
+1. System environment
+2. `.env` file (development only)
+3. Container/orchestrator secrets
+
+### Configuration Files
+
+| File | Purpose | Environment |
+|------|---------|-------------|
+| `.env` | Local development | Development only |
+| `config/default.json` | Default values | All |
+| `config/production.json` | Production overrides | Production |
+
+## Environment Variables Reference
+
+### Required Variables
+
+These must be set for the application to start.
+
+#### DATABASE_URL
+
+| Property | Value |
+|----------|-------|
+| **Required** | Yes |
+| **Type** | String (connection URL) |
+| **Format** | `postgres://user:password@host:port/database` |
+| **Default** | None |
+
+**Description**: PostgreSQL connection string for the primary database.
+
+**Examples**:
+```bash
+# Development
+DATABASE_URL="postgres://dev:dev@localhost:5432/myapp_dev"
+
+# Production (with SSL)
+DATABASE_URL="postgres://user:pass@db.example.com:5432/myapp?sslmode=require"
+
+# Using connection pooler
+DATABASE_URL="postgres://user:pass@pgbouncer:6432/myapp?pgbouncer=true"
+```
+
+**Validation**: Must be a valid PostgreSQL connection string.
+
+---
+
+#### SECRET_KEY
+
+| Property | Value |
+|----------|-------|
+| **Required** | Yes |
+| **Type** | String |
+| **Min Length** | 32 characters |
+| **Default** | None |
+
+**Description**: Secret key for cryptographic operations (session signing, tokens).
+
+**Generation**:
+```bash
+# Generate a secure secret key
+openssl rand -hex 32
+# or
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+**Security**:
+- Never commit to version control
+- Rotate periodically (quarterly recommended)
+- Different value per environment
+
+---
+
+### Optional Variables
+
+#### LOG_LEVEL
+
+| Property | Value |
+|----------|-------|
+| **Required** | No |
+| **Type** | Enum |
+| **Values** | `debug`, `info`, `warn`, `error` |
+| **Default** | `info` |
+
+**Description**: Minimum log level to output.
+
+**Recommendations**:
+| Environment | Recommended |
+|-------------|-------------|
+| Development | `debug` |
+| Staging | `debug` |
+| Production | `info` or `warn` |
+
+---
+
+#### PORT
+
+| Property | Value |
+|----------|-------|
+| **Required** | No |
+| **Type** | Integer |
+| **Range** | 1-65535 |
+| **Default** | `3000` |
+
+**Description**: HTTP server listening port.
+
+**Notes**:
+- Ports below 1024 require root privileges
+- Cloud platforms often set this automatically
+
+---
+
+### Feature Flags
+
+#### FEATURE_NEW_CHECKOUT
+
+| Property | Value |
+|----------|-------|
+| **Required** | No |
+| **Type** | Boolean |
+| **Values** | `true`, `false`, `1`, `0` |
+| **Default** | `false` |
+
+**Description**: Enable the new checkout flow.
+
+**Rollout**:
+- Development: `true`
+- Staging: `true`
+- Production: `false` (until GA)
+
+---
+
+### Third-Party Integrations
+
+#### STRIPE_SECRET_KEY
+
+| Property | Value |
+|----------|-------|
+| **Required** | For payments |
+| **Type** | String |
+| **Format** | `sk_live_*` or `sk_test_*` |
+| **Default** | None |
+
+**Description**: Stripe API secret key for payment processing.
+
+**Obtaining**:
+1. Log into Stripe Dashboard
+2. Developers → API Keys
+3. Copy Secret Key
+
+**Environment Keys**:
+| Environment | Key Type |
+|-------------|----------|
+| Development | `sk_test_*` |
+| Staging | `sk_test_*` |
+| Production | `sk_live_*` |
+
+---
+
+## Configuration by Environment
+
+### Development
+
+```bash
+# .env.development
+NODE_ENV=development
+DATABASE_URL=postgres://dev:dev@localhost:5432/myapp_dev
+SECRET_KEY=dev-secret-key-not-for-production-use
+LOG_LEVEL=debug
+PORT=3000
+
+# Feature flags (all enabled for testing)
+FEATURE_NEW_CHECKOUT=true
+
+# Use test keys for integrations
+STRIPE_SECRET_KEY=sk_test_xxx
+```
+
+### Staging
+
+```bash
+# Set via CI/CD or container orchestrator
+NODE_ENV=staging
+DATABASE_URL=postgres://user:pass@staging-db:5432/myapp
+SECRET_KEY=${STAGING_SECRET_KEY}  # From secrets manager
+LOG_LEVEL=debug
+PORT=8080
+
+FEATURE_NEW_CHECKOUT=true
+STRIPE_SECRET_KEY=sk_test_xxx
+```
+
+### Production
+
+```bash
+# Set via secrets manager (AWS SSM, Vault, etc.)
+NODE_ENV=production
+DATABASE_URL=${SSM_DATABASE_URL}
+SECRET_KEY=${SSM_SECRET_KEY}
+LOG_LEVEL=info
+PORT=8080
+
+# Conservative feature flags
+FEATURE_NEW_CHECKOUT=false
+STRIPE_SECRET_KEY=${SSM_STRIPE_KEY}
+```
+
+## Secrets Management
+
+### Local Development
+
+Use `.env` file (git-ignored):
+```bash
+cp .env.example .env
+# Edit .env with your values
+```
+
+### Production
+
+Never use `.env` files in production. Use:
+
+| Platform | Method |
+|----------|--------|
+| AWS | SSM Parameter Store or Secrets Manager |
+| GCP | Secret Manager |
+| Azure | Key Vault |
+| Kubernetes | Secrets + External Secrets Operator |
+| Docker | Docker Secrets or Swarm Secrets |
+
+## Validation
+
+The application validates configuration on startup. Invalid configuration will prevent startup with clear error messages:
+
+```
+Configuration Error:
+  - DATABASE_URL: Required but not set
+  - SECRET_KEY: Must be at least 32 characters (got 16)
+  - LOG_LEVEL: Invalid value 'verbose' (expected: debug, info, warn, error)
+```
+
+## Troubleshooting
+
+### Common Issues
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| "DATABASE_URL required" | Env var not set | Check `.env` exists and is loaded |
+| "Invalid DATABASE_URL" | Malformed URL | Verify format: `postgres://user:pass@host:port/db` |
+| Connection refused | Wrong host/port | Check database is running and accessible |
+| SSL required | Production DB needs SSL | Add `?sslmode=require` to URL |
+
+### Debugging Configuration
+
+```bash
+# Print loaded configuration (redacted)
+npm run config:debug
+
+# Verify environment variables are set
+env | grep -E "DATABASE|SECRET|STRIPE"
+```
+```
+
+## Constraints
+
+### DO
+- Document every configuration option
+- Include type, default, and valid values
+- Provide examples for each environment
+- Explain security implications for sensitive values
+- Include generation commands for secrets
+- Add validation rules and error messages
+- Group related configurations logically
+
+### DO NOT
+- Include actual secrets or credentials
+- Skip default values
+- Forget environment-specific guidance
+- Ignore security best practices for secrets
+- Leave out troubleshooting guidance
+- Use inconsistent formatting
+
+## Examples
+
+### Example 1: Node.js API Configuration
+
+**Input:**
+```
+application_name: User Service API
+environments: development, staging, production
+config_source:
+  PORT: 3000
+  DATABASE_URL: required, postgres connection
+  REDIS_URL: optional, redis connection
+  JWT_SECRET: required, min 32 chars
+  JWT_EXPIRY: optional, default 1h
+  RATE_LIMIT_RPM: optional, default 100
+  CORS_ORIGINS: optional, comma-separated
+  SENTRY_DSN: optional, error tracking
+  LOG_FORMAT: json or pretty, default json
+```
+
+**Output:**
+```markdown
+# User Service API Configuration Reference
+
+## Overview
+
+Configuration is loaded from environment variables with support for `.env` files in development. The service validates all configuration on startup.
+
+**Configuration Precedence**:
+1. Environment variables (highest)
+2. `.env` file (development only)
+3. Default values (lowest)
+
+## Quick Start
+
+```bash
+# Minimum required configuration
+export DATABASE_URL="postgres://user:pass@localhost:5432/users"
+export JWT_SECRET="$(openssl rand -hex 32)"
+```
+
+## Environment Variables Reference
+
+### Required Variables
+
+#### DATABASE_URL
+
+| Property | Value |
+|----------|-------|
+| **Required** | Yes |
+| **Type** | String (PostgreSQL URL) |
+| **Format** | `postgres://user:password@host:port/database` |
+
+**Description**: Primary PostgreSQL database connection.
+
+```bash
+# Development
+DATABASE_URL="postgres://dev:dev@localhost:5432/users_dev"
+
+# Production (with SSL and connection pooling)
+DATABASE_URL="postgres://user:pass@prod-db.aws.com:5432/users?sslmode=require&pool_size=20"
+```
+
+---
+
+#### JWT_SECRET
+
+| Property | Value |
+|----------|-------|
+| **Required** | Yes |
+| **Type** | String |
+| **Min Length** | 32 characters |
+
+**Description**: Secret for signing JWT tokens.
+
+```bash
+# Generate secure secret
+openssl rand -hex 32
+```
+
+**Security**: Rotate every 90 days. Use different values per environment.
+
+---
+
+### Optional Variables
+
+#### PORT
+
+| Property | Value |
+|----------|-------|
+| **Required** | No |
+| **Default** | `3000` |
+| **Type** | Integer (1-65535) |
+
+---
+
+#### REDIS_URL
+
+| Property | Value |
+|----------|-------|
+| **Required** | No |
+| **Default** | None (caching disabled) |
+| **Format** | `redis://[:password@]host:port[/db]` |
+
+**Description**: Redis connection for caching and rate limiting.
+
+```bash
+# With authentication
+REDIS_URL="redis://:password@redis.example.com:6379/0"
+
+# Cluster mode
+REDIS_URL="redis://node1:6379,node2:6379,node3:6379"
+```
+
+---
+
+#### JWT_EXPIRY
+
+| Property | Value |
+|----------|-------|
+| **Default** | `1h` |
+| **Format** | Duration string (`15m`, `1h`, `7d`) |
+
+---
+
+#### RATE_LIMIT_RPM
+
+| Property | Value |
+|----------|-------|
+| **Default** | `100` |
+| **Type** | Integer |
+
+**Description**: Maximum requests per minute per IP.
+
+| Environment | Recommended |
+|-------------|-------------|
+| Development | `1000` (effectively disabled) |
+| Production | `100` |
+
+---
+
+#### CORS_ORIGINS
+
+| Property | Value |
+|----------|-------|
+| **Default** | `*` (development), none (production) |
+| **Format** | Comma-separated URLs |
+
+```bash
+CORS_ORIGINS="https://app.example.com,https://admin.example.com"
+```
+
+---
+
+#### LOG_FORMAT
+
+| Property | Value |
+|----------|-------|
+| **Default** | `json` |
+| **Values** | `json`, `pretty` |
+
+**Recommendations**:
+- `pretty` for local development (human-readable)
+- `json` for production (machine-parseable)
+```
