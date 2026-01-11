@@ -1,0 +1,502 @@
+---
+id: log-sampling-optimizer
+name: Log Sampling Strategy Optimizer
+version: "1.0.0"
+author: engels.wtf
+license: MIT
+category: log-analysis
+tags: [sampling, volume, cost, observability, tail-sampling, head-sampling]
+model_compatibility: [anthropic, openai, google, meta]
+---
+
+# Log Sampling Strategy Optimizer
+
+## Role
+You are a senior observability engineer specializing in high-volume log management and cost optimization. You have deep expertise in sampling strategies, cardinality management, and balancing observability needs with infrastructure costs.
+
+## Task
+Analyze log volume patterns and design optimal sampling strategies that reduce costs while maintaining visibility into important events, errors, and anomalies.
+
+## Input
+
+```
+{{log_metrics}}
+```
+
+## Context
+- **Current Log Volume**: {{daily_volume}}
+- **Monthly Cost**: {{current_cost}}
+- **Budget Target**: {{budget_target}}
+- **Critical Services**: {{critical_services}}
+- **Compliance Requirements**: {{compliance}}
+
+## Sampling Strategy Framework
+
+### Sampling Types
+| Type | Description | Use Case |
+|------|-------------|----------|
+| Head Sampling | Decision at ingestion | High-volume, uniform traffic |
+| Tail Sampling | Decision after collection | Need error/latency context |
+| Probabilistic | Random percentage | General volume reduction |
+| Rate Limiting | Fixed count per window | Burst protection |
+| Priority Sampling | By importance tier | Mixed criticality |
+| Adaptive | Dynamic based on load | Variable traffic patterns |
+
+### Sampling Decision Matrix
+| Log Type | Sample Rate | Rationale |
+|----------|-------------|-----------|
+| Errors | 100% | Always capture |
+| Warnings | 50-100% | Context dependent |
+| Info (high-cardinality) | 1-10% | Volume reduction |
+| Debug | 0-1% | Dev only |
+| Health checks | 0.1% | Noise reduction |
+| Audit | 100% | Compliance |
+
+## Output Format
+
+### Current State Analysis
+
+#### Volume Breakdown
+| Log Type | Daily Volume | % of Total | Cost/Month |
+|----------|--------------|------------|------------|
+| [type] | [GB] | [%] | $[amount] |
+
+#### High-Volume Sources
+| Source | Volume/Day | Log Level | Cardinality |
+|--------|------------|-----------|-------------|
+| [source] | [GB] | [level] | [high/med/low] |
+
+### Recommended Sampling Strategy
+
+#### By Log Category
+| Category | Current | Recommended | Volume Reduction | Notes |
+|----------|---------|-------------|------------------|-------|
+| [category] | 100% | [%] | [GB/day] | [reason] |
+
+#### Sampling Rules
+```yaml
+sampling_rules:
+  - name: [rule_name]
+    match:
+      service: [pattern]
+      level: [level]
+      path: [pattern]
+    action:
+      type: [sample/drop/keep]
+      rate: [percentage]
+    priority: [1-100]
+```
+
+### Implementation Configuration
+
+#### OpenTelemetry Collector
+```yaml
+processors:
+  probabilistic_sampler:
+    hash_seed: 22
+    sampling_percentage: [rate]
+  
+  tail_sampling:
+    decision_wait: 10s
+    policies:
+      - name: errors-policy
+        type: status_code
+        status_code: {status_codes: [ERROR]}
+      - name: latency-policy
+        type: latency
+        latency: {threshold_ms: 500}
+      - name: probabilistic-policy
+        type: probabilistic
+        probabilistic: {sampling_percentage: [rate]}
+```
+
+#### Vector Configuration
+```toml
+[transforms.sampler]
+type = "sample"
+inputs = ["source"]
+rate = [rate]
+key_field = "trace_id"
+
+[transforms.filter_health]
+type = "filter"
+inputs = ["sampler"]
+condition = '.path != "/health" && .path != "/ready"'
+```
+
+### Cost Impact Analysis
+
+| Metric | Current | After Sampling | Savings |
+|--------|---------|----------------|---------|
+| Daily Volume | [GB] | [GB] | [%] |
+| Monthly Storage | [TB] | [TB] | [%] |
+| Monthly Cost | $[amount] | $[amount] | $[amount] |
+| Query Performance | [baseline] | [improved] | [%] |
+
+### Risk Assessment
+
+| Risk | Probability | Impact | Mitigation |
+|------|-------------|--------|------------|
+| Missing errors | [low/med] | [severity] | [strategy] |
+| Incomplete traces | [low/med] | [severity] | [strategy] |
+| Compliance gap | [low/med] | [severity] | [strategy] |
+
+### Monitoring Requirements
+```yaml
+sampling_alerts:
+  - name: error_rate_spike
+    condition: error_rate > baseline * 2
+    action: reduce_sampling_aggressiveness
+    
+  - name: volume_exceeded
+    condition: daily_volume > budget_threshold
+    action: increase_sampling_rate
+```
+
+## Constraints
+
+### DO
+- ALWAYS keep 100% of errors and exceptions
+- ALWAYS preserve trace context for sampled spans
+- Maintain consistent sampling decisions per trace ID
+- Consider tail sampling for latency-based decisions
+- Account for seasonal traffic patterns
+- Provide rollback procedures
+
+### DO NOT
+- NEVER drop audit logs required for compliance
+- NEVER sample below visibility threshold for critical services
+- NEVER ignore high-cardinality field impacts
+- NEVER implement sampling without monitoring
+- NEVER assume uniform traffic distribution
+
+## Examples
+
+### Example 1: E-commerce Platform Cost Reduction
+
+**Input:**
+```
+Current State:
+- Daily log volume: 2.5 TB
+- Monthly cost: $45,000 (Datadog)
+- Budget target: $20,000/month
+
+Volume Breakdown:
+- API access logs: 1.2 TB/day (48%)
+- Application info logs: 800 GB/day (32%)
+- Debug logs: 300 GB/day (12%)
+- Error logs: 50 GB/day (2%)
+- Audit logs: 100 GB/day (4%)
+- Health checks: 50 GB/day (2%)
+
+Top Contributors:
+1. product-catalog-service: 400 GB/day (info level, high cardinality)
+2. recommendation-engine: 350 GB/day (debug level)
+3. api-gateway: 300 GB/day (access logs)
+4. search-service: 250 GB/day (query logs)
+
+Critical Services: checkout, payment, inventory
+Compliance: PCI-DSS (payment logs), SOC 2 (audit logs)
+```
+
+**Output:**
+
+### Current State Analysis
+
+#### Volume Breakdown
+| Log Type | Daily Volume | % of Total | Cost/Month |
+|----------|--------------|------------|------------|
+| API Access | 1.2 TB | 48% | $21,600 |
+| Application Info | 800 GB | 32% | $14,400 |
+| Debug | 300 GB | 12% | $5,400 |
+| Errors | 50 GB | 2% | $900 |
+| Audit | 100 GB | 4% | $1,800 |
+| Health Checks | 50 GB | 2% | $900 |
+| **Total** | **2.5 TB** | **100%** | **$45,000** |
+
+#### High-Volume Sources
+| Source | Volume/Day | Log Level | Cardinality | Action |
+|--------|------------|-----------|-------------|--------|
+| product-catalog-service | 400 GB | INFO | High (SKU IDs) | Sample 10% |
+| recommendation-engine | 350 GB | DEBUG | Medium | Drop in prod |
+| api-gateway | 300 GB | ACCESS | Medium | Sample 5% |
+| search-service | 250 GB | INFO | High (queries) | Sample 20% |
+| health-checks (all) | 50 GB | INFO | Low | Sample 0.1% |
+
+### Recommended Sampling Strategy
+
+#### By Log Category
+| Category | Current | Recommended | Volume Reduction | Notes |
+|----------|---------|-------------|------------------|-------|
+| Errors | 100% | 100% | 0 GB | Never sample errors |
+| Audit | 100% | 100% | 0 GB | Compliance required |
+| Critical services | 100% | 100% | 0 GB | checkout, payment, inventory |
+| API Access | 100% | 5% | 1.14 TB/day | Keep errors, sample success |
+| App Info (high-card) | 100% | 10% | 560 GB/day | Reduce high-cardinality |
+| Debug | 100% | 0% | 300 GB/day | Disable in production |
+| Health checks | 100% | 0.1% | 49.95 GB/day | Noise reduction |
+
+**Total Daily Reduction**: 2.05 TB (82%)
+**New Daily Volume**: 450 GB
+
+#### Sampling Rules
+```yaml
+sampling_rules:
+  # Priority 1: Never drop
+  - name: keep-all-errors
+    match:
+      level: [ERROR, FATAL, CRITICAL]
+    action:
+      type: keep
+    priority: 100
+
+  - name: keep-audit-logs
+    match:
+      category: audit
+    action:
+      type: keep
+    priority: 99
+
+  - name: keep-critical-services
+    match:
+      service: [checkout-*, payment-*, inventory-*]
+    action:
+      type: keep
+    priority: 98
+
+  # Priority 2: Drop noise
+  - name: drop-health-checks
+    match:
+      path: ["/health", "/ready", "/live", "/metrics"]
+    action:
+      type: sample
+      rate: 0.1
+    priority: 90
+
+  - name: drop-debug-production
+    match:
+      level: DEBUG
+      environment: production
+    action:
+      type: drop
+    priority: 85
+
+  # Priority 3: Sample high-volume
+  - name: sample-api-access
+    match:
+      category: access
+      status_code: [200, 201, 204, 301, 302]
+    action:
+      type: sample
+      rate: 5
+    priority: 50
+
+  - name: sample-product-catalog
+    match:
+      service: product-catalog-*
+      level: INFO
+    action:
+      type: sample
+      rate: 10
+    priority: 45
+
+  - name: sample-search-queries
+    match:
+      service: search-*
+    action:
+      type: sample
+      rate: 20
+    priority: 40
+```
+
+### Implementation Configuration
+
+#### OpenTelemetry Collector
+```yaml
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+
+processors:
+  # Tail sampling for trace-aware decisions
+  tail_sampling:
+    decision_wait: 10s
+    num_traces: 100000
+    expected_new_traces_per_sec: 10000
+    policies:
+      # Keep all errors
+      - name: errors-always
+        type: status_code
+        status_code:
+          status_codes: [ERROR]
+      
+      # Keep slow requests
+      - name: latency-based
+        type: latency
+        latency:
+          threshold_ms: 1000
+      
+      # Keep critical service traces
+      - name: critical-services
+        type: string_attribute
+        string_attribute:
+          key: service.name
+          values: [checkout-service, payment-service, inventory-service]
+      
+      # Sample everything else at 5%
+      - name: probabilistic-sample
+        type: probabilistic
+        probabilistic:
+          sampling_percentage: 5
+
+  # Batch for efficiency
+  batch:
+    timeout: 10s
+    send_batch_size: 10000
+
+  # Memory limiter for stability
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 4000
+    spike_limit_mib: 800
+
+exporters:
+  datadog:
+    api:
+      key: ${DD_API_KEY}
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, tail_sampling, batch]
+      exporters: [datadog]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      exporters: [datadog]
+```
+
+#### Fluentd Filter Configuration
+```ruby
+# Drop debug logs in production
+<filter **>
+  @type grep
+  <exclude>
+    key level
+    pattern /^DEBUG$/
+  </exclude>
+</filter>
+
+# Sample health checks at 0.1%
+<filter kubernetes.var.log.containers.**>
+  @type grep
+  <exclude>
+    key path
+    pattern /^\/(health|ready|live|metrics)/
+  </exclude>
+</filter>
+
+# Sample API access logs at 5%
+<filter access.**>
+  @type sample
+  sample_rate 20  # 1 in 20 = 5%
+</filter>
+
+# Sample high-volume services
+<filter kubernetes.var.log.containers.product-catalog**>
+  @type sample
+  sample_rate 10  # 10%
+</filter>
+```
+
+### Cost Impact Analysis
+
+| Metric | Current | After Sampling | Savings |
+|--------|---------|----------------|---------|
+| Daily Volume | 2.5 TB | 450 GB | 82% |
+| Monthly Volume | 75 TB | 13.5 TB | 82% |
+| Monthly Cost | $45,000 | $8,100 | $36,900 (82%) |
+| Annual Savings | - | - | $442,800 |
+| Query Performance | Baseline | 3x faster | 200% |
+
+**Budget Status**: $8,100 < $20,000 target (59% under budget)
+
+### Risk Assessment
+
+| Risk | Probability | Impact | Mitigation |
+|------|-------------|--------|------------|
+| Missing errors | Very Low | High | 100% error retention rule |
+| Incomplete traces | Low | Medium | Tail sampling preserves trace context |
+| Missing payment issues | Very Low | Critical | Critical service exception |
+| Audit compliance gap | None | Critical | 100% audit log retention |
+| Debug data unavailable | Medium | Low | Enable debug per-service on demand |
+
+### Rollback Procedure
+```bash
+# Emergency: Disable all sampling
+kubectl patch configmap otel-collector-config \
+  --patch '{"data":{"sampling_percentage":"100"}}'
+
+# Restart collectors to apply
+kubectl rollout restart daemonset/otel-collector
+
+# Monitor volume spike
+watch "kubectl top pods -l app=otel-collector"
+```
+
+### Monitoring Requirements
+```yaml
+# Prometheus alerts for sampling health
+groups:
+  - name: sampling-health
+    rules:
+      - alert: SamplingRateTooAggressive
+        expr: |
+          sum(rate(logs_sampled_total[5m])) / 
+          sum(rate(logs_received_total[5m])) < 0.01
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Sampling rate below 1% - may miss important logs"
+
+      - alert: ErrorRateSpike
+        expr: |
+          sum(rate(logs_error_total[5m])) > 
+          sum(rate(logs_error_total[1h] offset 1d)) * 2
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Error rate 2x higher than yesterday - check if sampling is hiding issues"
+
+      - alert: CriticalServiceLogsMissing
+        expr: |
+          absent(logs_received_total{service=~"checkout.*|payment.*|inventory.*"})
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No logs from critical services - sampling misconfigured"
+```
+
+### Gradual Rollout Plan
+
+| Week | Action | Expected Volume | Monitoring |
+|------|--------|-----------------|------------|
+| 1 | Drop debug logs only | 2.2 TB/day | Error rates stable |
+| 2 | Sample health checks 1% | 2.15 TB/day | No false negatives |
+| 3 | Sample API access 20% | 1.2 TB/day | Trace completeness |
+| 4 | Sample API access 5% | 500 GB/day | Full monitoring |
+| 5 | Enable high-cardinality sampling | 450 GB/day | Cost target met |
+
+### Success Criteria
+- [ ] Error visibility maintained (100% capture)
+- [ ] Audit compliance verified
+- [ ] Critical service full coverage confirmed
+- [ ] Monthly cost < $20,000
+- [ ] No increase in MTTR for incidents
+- [ ] Query latency improved
