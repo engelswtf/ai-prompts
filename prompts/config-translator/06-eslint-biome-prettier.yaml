@@ -12,7 +12,7 @@ model_compatibility: [claude, gpt-4, gemini, llama]
 # Linter and Formatter Configuration Converter
 
 ## Role
-You are an expert in JavaScript/TypeScript tooling. You translate linter and formatter configurations between ESLint, Biome, and Prettier while preserving code style rules and best practices.
+You are an expert in JavaScript/TypeScript tooling with 10+ years of experience. You translate linter and formatter configurations between ESLint, Biome, and Prettier while preserving code style rules and best practices.
 
 ## Task
 Convert the provided linter/formatter configuration from the source format to the target format.
@@ -94,7 +94,9 @@ CONFIG:
 
 ## Examples
 
-### Input
+### Example 1: ESLint + Prettier to Biome Migration
+
+**Input:**
 ```
 SOURCE_FORMAT: eslint+prettier
 TARGET_FORMAT: biome
@@ -130,7 +132,7 @@ module.exports = {
 }
 ```
 
-### Output
+**Output:**
 
 #### Analysis
 - **Source**: ESLint + Prettier (TypeScript)
@@ -218,3 +220,348 @@ npm install --save-dev @biomejs/biome
 2. `explicit-function-return-type` has no equivalent; enable TypeScript's `noImplicitReturns`
 3. Some rules are in "nursery" (experimental) - may change in future versions
 4. Run `biome migrate` for automatic migration assistance
+
+#### Conversion Notes
+- ESLint's plugin-based rules map to Biome's categorized rule groups
+- Prettier's formatting options map directly to Biome's formatter settings
+- Combined ESLint+Prettier configs simplify to single Biome configuration
+- Rule severities (`error`, `warn`, `off`) map directly between tools
+
+---
+
+### Example 2: Biome to ESLint + Prettier (Reverse Migration)
+
+**Input:**
+```
+SOURCE_FORMAT: biome
+TARGET_FORMAT: eslint+prettier
+CONFIG:
+{
+  "$schema": "https://biomejs.dev/schemas/1.5.0/schema.json",
+  "organizeImports": {
+    "enabled": true
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "tab",
+    "indentWidth": 4,
+    "lineWidth": 120
+  },
+  "javascript": {
+    "formatter": {
+      "semicolons": "asNeeded",
+      "quoteStyle": "double",
+      "jsxQuoteStyle": "single",
+      "trailingComma": "all",
+      "arrowParentheses": "asNeeded"
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "noExcessiveCognitiveComplexity": {
+          "level": "warn",
+          "options": { "maxAllowedComplexity": 15 }
+        },
+        "noForEach": "warn"
+      },
+      "correctness": {
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error",
+        "useExhaustiveDependencies": "warn"
+      },
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noConsoleLog": "error",
+        "noDebugger": "error"
+      },
+      "style": {
+        "useConst": "error",
+        "useTemplate": "error",
+        "noNonNullAssertion": "warn",
+        "useImportType": "error"
+      },
+      "nursery": {
+        "useSortedClasses": "warn"
+      }
+    }
+  },
+  "files": {
+    "ignore": ["**/dist/**", "**/node_modules/**", "**/*.config.*", "**/coverage/**"]
+  },
+  "overrides": [
+    {
+      "include": ["**/*.test.ts", "**/*.spec.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+**Output:**
+
+#### Analysis
+- **Source**: Biome v1.5.0
+- **Target**: ESLint + Prettier (TypeScript)
+- **Rules Detected**: 14 linting rules + 7 formatting rules
+- **Plugin Dependencies**: @typescript-eslint, eslint-plugin-import, eslint-plugin-react-hooks
+- **Conversion Complexity**: Moderate
+
+#### Converted Configuration
+
+**.prettierrc**
+```json
+{
+  "semi": false,
+  "singleQuote": false,
+  "jsxSingleQuote": true,
+  "tabWidth": 4,
+  "useTabs": true,
+  "trailingComma": "all",
+  "printWidth": 120,
+  "arrowParens": "avoid"
+}
+```
+
+**eslint.config.js** (Flat Config - ESLint v9+)
+```javascript
+import eslint from "@eslint/js";
+import tseslint from "typescript-eslint";
+import importPlugin from "eslint-plugin-import";
+import reactHooksPlugin from "eslint-plugin-react-hooks";
+import prettierConfig from "eslint-config-prettier";
+
+export default tseslint.config(
+  // Base configurations
+  eslint.configs.recommended,
+  ...tseslint.configs.recommended,
+  prettierConfig,
+
+  // Global settings
+  {
+    plugins: {
+      import: importPlugin,
+      "react-hooks": reactHooksPlugin,
+    },
+    rules: {
+      // === Correctness ===
+      // noUnusedVariables -> @typescript-eslint/no-unused-vars
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": "error",
+
+      // noUnusedImports -> import/no-unused-modules (partial)
+      // Note: For full support, use eslint-plugin-unused-imports
+      "import/no-unused-modules": ["error", { unusedExports: true }],
+
+      // useExhaustiveDependencies -> react-hooks/exhaustive-deps
+      "react-hooks/exhaustive-deps": "warn",
+
+      // === Suspicious ===
+      // noExplicitAny
+      "@typescript-eslint/no-explicit-any": "error",
+
+      // noConsoleLog (stricter than no-console)
+      "no-console": ["error", { allow: ["warn", "error", "info"] }],
+
+      // noDebugger
+      "no-debugger": "error",
+
+      // === Style ===
+      // useConst -> prefer-const
+      "prefer-const": "error",
+
+      // useTemplate -> prefer-template
+      "prefer-template": "error",
+
+      // noNonNullAssertion
+      "@typescript-eslint/no-non-null-assertion": "warn",
+
+      // useImportType
+      "@typescript-eslint/consistent-type-imports": [
+        "error",
+        { prefer: "type-imports" }
+      ],
+
+      // === Complexity ===
+      // noExcessiveCognitiveComplexity -> complexity
+      complexity: ["warn", { max: 15 }],
+
+      // noForEach (no direct equivalent, use eslint-plugin-unicorn)
+      // "unicorn/no-array-for-each": "warn",
+    },
+    settings: {
+      "import/resolver": {
+        typescript: true,
+        node: true,
+      },
+    },
+  },
+
+  // Organize imports (via eslint-plugin-import)
+  {
+    rules: {
+      "import/order": [
+        "error",
+        {
+          groups: [
+            "builtin",
+            "external",
+            "internal",
+            "parent",
+            "sibling",
+            "index",
+            "type"
+          ],
+          "newlines-between": "always",
+          alphabetize: { order: "asc", caseInsensitive: true },
+        },
+      ],
+    },
+  },
+
+  // Global ignores
+  {
+    ignores: [
+      "**/dist/**",
+      "**/node_modules/**",
+      "**/*.config.*",
+      "**/coverage/**",
+    ],
+  },
+
+  // Test file overrides
+  {
+    files: ["**/*.test.ts", "**/*.spec.ts"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  }
+);
+```
+
+**Alternative: .eslintrc.cjs** (Legacy Config)
+```javascript
+module.exports = {
+  root: true,
+  env: {
+    browser: true,
+    es2022: true,
+    node: true,
+  },
+  extends: [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "prettier",
+  ],
+  parser: "@typescript-eslint/parser",
+  parserOptions: {
+    ecmaVersion: "latest",
+    sourceType: "module",
+    project: "./tsconfig.json",
+  },
+  plugins: ["@typescript-eslint", "import", "react-hooks"],
+  rules: {
+    // Same rules as flat config above
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": "error",
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/no-non-null-assertion": "warn",
+    "@typescript-eslint/consistent-type-imports": ["error", { prefer: "type-imports" }],
+    "no-console": ["error", { allow: ["warn", "error", "info"] }],
+    "no-debugger": "error",
+    "prefer-const": "error",
+    "prefer-template": "error",
+    "complexity": ["warn", { max: 15 }],
+    "react-hooks/exhaustive-deps": "warn",
+    "import/order": ["error", {
+      "groups": ["builtin", "external", "internal", "parent", "sibling", "index", "type"],
+      "newlines-between": "always",
+      "alphabetize": { "order": "asc", "caseInsensitive": true }
+    }],
+  },
+  ignorePatterns: ["dist/", "node_modules/", "*.config.*", "coverage/"],
+  overrides: [
+    {
+      files: ["**/*.test.ts", "**/*.spec.ts"],
+      rules: {
+        "@typescript-eslint/no-explicit-any": "off",
+      },
+    },
+  ],
+};
+```
+
+#### Rule Mapping Table
+| Category | Biome Rule | ESLint Rule | Status |
+|----------|------------|-------------|--------|
+| Correctness | `noUnusedVariables` | `@typescript-eslint/no-unused-vars` | Mapped |
+| Correctness | `noUnusedImports` | `import/no-unused-modules` | Partial |
+| Correctness | `useExhaustiveDependencies` | `react-hooks/exhaustive-deps` | Mapped |
+| Suspicious | `noExplicitAny` | `@typescript-eslint/no-explicit-any` | Mapped |
+| Suspicious | `noConsoleLog` | `no-console` | Mapped (with allow list) |
+| Suspicious | `noDebugger` | `no-debugger` | Mapped |
+| Style | `useConst` | `prefer-const` | Mapped |
+| Style | `useTemplate` | `prefer-template` | Mapped |
+| Style | `noNonNullAssertion` | `@typescript-eslint/no-non-null-assertion` | Mapped |
+| Style | `useImportType` | `@typescript-eslint/consistent-type-imports` | Mapped |
+| Complexity | `noExcessiveCognitiveComplexity` | `complexity` | Partial (different algo) |
+| Complexity | `noForEach` | - | No Equivalent |
+| Nursery | `useSortedClasses` | - | No Equivalent |
+
+#### Unmapped Rules
+| Biome Rule | Reason | Suggested Alternative |
+|------------|--------|----------------------|
+| `noForEach` | No ESLint core rule | Use `eslint-plugin-unicorn` with `unicorn/no-array-for-each` |
+| `useSortedClasses` | Biome-specific (Tailwind) | Use `eslint-plugin-tailwindcss` with `tailwindcss/classnames-order` |
+| `noUnusedImports` | Partial coverage | Use `eslint-plugin-unused-imports` for exact behavior |
+
+#### Required Dependencies
+```bash
+# Install ESLint and Prettier
+npm install --save-dev \
+  eslint \
+  prettier \
+  typescript-eslint \
+  @eslint/js \
+  eslint-config-prettier \
+  eslint-plugin-import \
+  eslint-plugin-react-hooks \
+  eslint-import-resolver-typescript
+
+# Optional: for unmapped rules
+npm install --save-dev \
+  eslint-plugin-unicorn \
+  eslint-plugin-unused-imports \
+  eslint-plugin-tailwindcss
+
+# Add scripts to package.json:
+# "lint": "eslint .",
+# "lint:fix": "eslint . --fix",
+# "format": "prettier --write .",
+# "format:check": "prettier --check ."
+
+# Remove Biome
+npm uninstall @biomejs/biome
+```
+
+#### Migration Notes
+1. ESLint + Prettier requires two tools; run both in CI/pre-commit hooks
+2. `noConsoleLog` in Biome is stricter; ESLint's `no-console` blocks all by default
+3. Biome's `organizeImports` maps to `eslint-plugin-import` with manual configuration
+4. Cognitive complexity algorithms differ between tools; adjust threshold as needed
+5. Test file overrides work similarly but syntax differs between configs
+
+#### Conversion Notes
+- Biome's `semicolons: "asNeeded"` maps to Prettier's `semi: false`
+- Biome's `quoteStyle: "double"` maps to Prettier's `singleQuote: false`
+- Biome's `indentStyle: "tab"` maps to Prettier's `useTabs: true`
+- Biome's categorized rules (complexity, correctness, etc.) flatten in ESLint
+- ESLint flat config (v9+) is recommended; legacy config shown for compatibility

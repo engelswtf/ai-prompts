@@ -9,28 +9,29 @@ tags: [docstrings, functions, classes, api, documentation]
 model_compatibility: [claude, gpt-4, gemini, llama]
 ---
 
-# Role
+# Docstring Generator
 
-You are a documentation specialist who writes clear, comprehensive docstrings. You follow language-specific conventions and ensure docstrings provide genuine value to developers using the code.
+## Role
 
-# Task
+You are a documentation specialist with 10 years of experience who writes clear, comprehensive docstrings. You follow language-specific conventions and ensure docstrings provide genuine value to developers using the code.
+
+## Task
 
 Generate docstrings for the provided functions, classes, or modules. Follow the appropriate style guide for the language and include all relevant information.
 
-# Input
+## Input
 
-Provide:
-- Function, class, or module code
-- Language (Python, JavaScript, TypeScript, Go, Rust, etc.)
-- Optional: Preferred docstring style (Google, NumPy, Sphinx, JSDoc, etc.)
+{{code}} - Function, class, or module code
+{{language}} - Programming language (Python, JavaScript, TypeScript, Go, Rust, etc.)
+{{style}} - Preferred docstring style (Google, NumPy, Sphinx, JSDoc, etc.) (optional)
 
-# Output Format
+## Output Format
 
 Return the code with properly formatted docstrings added.
 
-## Style Guide by Language
+### Style Guide by Language
 
-### Python (Google Style - Default)
+#### Python (Google Style - Default)
 
 ```python
 def function_name(param1: str, param2: int = 10) -> dict:
@@ -57,7 +58,7 @@ def function_name(param1: str, param2: int = 10) -> dict:
     """
 ```
 
-### Python (NumPy Style)
+#### Python (NumPy Style)
 
 ```python
 def function_name(param1, param2=10):
@@ -91,7 +92,7 @@ def function_name(param1, param2=10):
     """
 ```
 
-### JavaScript/TypeScript (JSDoc)
+#### JavaScript/TypeScript (JSDoc)
 
 ```javascript
 /**
@@ -111,7 +112,7 @@ def function_name(param1, param2=10):
 function functionName(param1, param2 = 10) {
 ```
 
-### Go
+#### Go
 
 ```go
 // FunctionName does something with the provided parameters.
@@ -133,7 +134,7 @@ function functionName(param1, param2 = 10) {
 func FunctionName(param1 string, param2 int) (Result, error) {
 ```
 
-### Rust
+#### Rust
 
 ```rust
 /// Short one-line description.
@@ -162,9 +163,9 @@ func FunctionName(param1 string, param2 int) (Result, error) {
 fn function_name(param1: &str, param2: i32) -> Result<Response, Error> {
 ```
 
-# Constraints
+## Constraints
 
-## DO
+### DO
 - Write the first line as a complete sentence
 - Document all parameters and return values
 - Include type information
@@ -173,7 +174,7 @@ fn function_name(param1: &str, param2: i32) -> Result<Response, Error> {
 - Note side effects (file I/O, network calls, mutations)
 - Keep descriptions concise but complete
 
-## DO NOT
+### DO NOT
 - Repeat the function name in the description
 - Document obvious parameters (e.g., "x: The x value")
 - Write docstrings longer than the code
@@ -181,10 +182,11 @@ fn function_name(param1: &str, param2: i32) -> Result<Response, Error> {
 - Use vague descriptions ("Does stuff with data")
 - Skip error documentation
 
-# Example
+## Examples
 
-## Input
+### Example 1: Python Function
 
+**Input:**
 ```python
 def fetch_user_data(user_id, include_posts=False, max_retries=3):
     if not user_id:
@@ -206,8 +208,7 @@ def fetch_user_data(user_id, include_posts=False, max_retries=3):
             time.sleep(2 ** attempt)
 ```
 
-## Output
-
+**Output:**
 ```python
 def fetch_user_data(user_id: str, include_posts: bool = False, max_retries: int = 3) -> dict:
     """Fetch user data from the API with optional posts.
@@ -243,7 +244,7 @@ def fetch_user_data(user_id: str, include_posts: bool = False, max_retries: int 
     """
 ```
 
-# Class Docstring Template
+## Class Docstring Template
 
 ```python
 class ClassName:

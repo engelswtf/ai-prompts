@@ -12,7 +12,7 @@ model_compatibility: [claude, gpt-4, gemini, llama]
 # Environment Variables and Config File Converter
 
 ## Role
-You are an expert in application configuration management. You translate configurations between .env files, JSON, YAML, TOML, and INI formats while preserving structure, types, and handling sensitive values appropriately.
+You are an expert in application configuration management with 10+ years of experience. You translate configurations between .env files, JSON, YAML, TOML, and INI formats while preserving structure, types, and handling sensitive values appropriately.
 
 ## Task
 Convert the provided configuration from the source format to the target format.
@@ -113,7 +113,9 @@ CONFIG:
 
 ## Examples
 
-### Input
+### Example 1: YAML to Environment Variables for NestJS
+
+**Input:**
 ```
 SOURCE_FORMAT: yaml
 TARGET_FORMAT: env
@@ -156,7 +158,7 @@ logging:
   format: json
 ```
 
-### Output
+**Output:**
 
 #### Analysis
 - **Source**: YAML
@@ -260,3 +262,329 @@ export default () => ({
   }
 });
 ```
+
+#### Conversion Notes
+- Nested YAML keys become SCREAMING_SNAKE_CASE with underscores as delimiters
+- camelCase is converted to SCREAMING_SNAKE (e.g., `enableNewUI` -> `ENABLE_NEW_UI`)
+- Arrays become comma-separated values; document the parsing strategy
+- Type information is lost in .env; document expected types for consumers
+
+---
+
+### Example 2: JSON with Complex Types to TOML
+
+**Input:**
+```
+SOURCE_FORMAT: json
+TARGET_FORMAT: toml
+FRAMEWORK: generic
+CONFIG:
+{
+  "app": {
+    "name": "my-service",
+    "version": "2.1.0",
+    "debug": false
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "timeout": {
+      "read": 30,
+      "write": 60,
+      "idle": 120
+    },
+    "tls": {
+      "enabled": true,
+      "cert_file": "/etc/ssl/certs/server.crt",
+      "key_file": "/etc/ssl/private/server.key",
+      "min_version": "1.2"
+    }
+  },
+  "database": {
+    "primary": {
+      "driver": "postgres",
+      "host": "db-primary.internal",
+      "port": 5432,
+      "name": "production",
+      "credentials": {
+        "username": "app_user",
+        "password": "super_secret_password"
+      },
+      "pool": {
+        "min_connections": 5,
+        "max_connections": 50,
+        "max_idle_time": "5m"
+      }
+    },
+    "replica": {
+      "driver": "postgres",
+      "host": "db-replica.internal",
+      "port": 5432,
+      "name": "production",
+      "credentials": {
+        "username": "readonly_user",
+        "password": "readonly_password"
+      },
+      "pool": {
+        "min_connections": 2,
+        "max_connections": 20,
+        "max_idle_time": "10m"
+      }
+    }
+  },
+  "cache": {
+    "backend": "redis",
+    "nodes": [
+      "redis-1.internal:6379",
+      "redis-2.internal:6379",
+      "redis-3.internal:6379"
+    ],
+    "password": "redis_cluster_password",
+    "ttl_seconds": 3600,
+    "prefix": "myapp:"
+  },
+  "logging": {
+    "level": "info",
+    "format": "json",
+    "outputs": ["stdout", "file"],
+    "file": {
+      "path": "/var/log/myapp/app.log",
+      "max_size_mb": 100,
+      "max_backups": 5,
+      "compress": true
+    }
+  },
+  "features": {
+    "rate_limiting": {
+      "enabled": true,
+      "requests_per_minute": 100,
+      "burst": 20
+    },
+    "metrics": {
+      "enabled": true,
+      "endpoint": "/metrics",
+      "include_runtime": true
+    }
+  },
+  "allowed_origins": [
+    "https://app.example.com",
+    "https://admin.example.com",
+    "https://api.example.com"
+  ]
+}
+```
+
+**Output:**
+
+#### Analysis
+- **Source**: JSON
+- **Target**: TOML
+- **Framework**: Generic
+- **Variables Detected**: 45+ configuration values across 7 categories
+- **Sensitive Values**: database.*.credentials.password, cache.password
+- **Nested Structures**: Yes (4 levels deep)
+- **Conversion Complexity**: Moderate
+
+#### Converted Configuration
+```toml
+# Application Configuration
+# Generated from JSON configuration
+
+# =============================================================================
+# Application Settings
+# =============================================================================
+[app]
+name = "my-service"
+version = "2.1.0"
+debug = false
+
+# =============================================================================
+# Server Settings
+# =============================================================================
+[server]
+host = "0.0.0.0"
+port = 8080
+
+[server.timeout]
+read = 30
+write = 60
+idle = 120
+
+[server.tls]
+enabled = true
+cert_file = "/etc/ssl/certs/server.crt"
+key_file = "/etc/ssl/private/server.key"
+min_version = "1.2"
+
+# =============================================================================
+# Database Settings
+# =============================================================================
+[database.primary]
+driver = "postgres"
+host = "db-primary.internal"
+port = 5432
+name = "production"
+
+[database.primary.credentials]
+username = "app_user"
+# SENSITIVE: Consider using environment variable or secrets manager
+password = "super_secret_password"
+
+[database.primary.pool]
+min_connections = 5
+max_connections = 50
+max_idle_time = "5m"
+
+[database.replica]
+driver = "postgres"
+host = "db-replica.internal"
+port = 5432
+name = "production"
+
+[database.replica.credentials]
+username = "readonly_user"
+# SENSITIVE: Consider using environment variable or secrets manager
+password = "readonly_password"
+
+[database.replica.pool]
+min_connections = 2
+max_connections = 20
+max_idle_time = "10m"
+
+# =============================================================================
+# Cache Settings
+# =============================================================================
+[cache]
+backend = "redis"
+# SENSITIVE: Consider using environment variable or secrets manager
+password = "redis_cluster_password"
+ttl_seconds = 3600
+prefix = "myapp:"
+# Array of Redis nodes
+nodes = [
+    "redis-1.internal:6379",
+    "redis-2.internal:6379",
+    "redis-3.internal:6379",
+]
+
+# =============================================================================
+# Logging Settings
+# =============================================================================
+[logging]
+level = "info"
+format = "json"
+outputs = ["stdout", "file"]
+
+[logging.file]
+path = "/var/log/myapp/app.log"
+max_size_mb = 100
+max_backups = 5
+compress = true
+
+# =============================================================================
+# Feature Flags
+# =============================================================================
+[features.rate_limiting]
+enabled = true
+requests_per_minute = 100
+burst = 20
+
+[features.metrics]
+enabled = true
+endpoint = "/metrics"
+include_runtime = true
+
+# =============================================================================
+# CORS Settings
+# =============================================================================
+# Top-level array of allowed origins
+allowed_origins = [
+    "https://app.example.com",
+    "https://admin.example.com",
+    "https://api.example.com",
+]
+```
+
+#### Variable Mapping Table
+| JSON Path | TOML Key | Type | Notes |
+|-----------|----------|------|-------|
+| `app.name` | `app.name` | string | Direct mapping |
+| `app.debug` | `app.debug` | boolean | JSON true/false to TOML true/false |
+| `server.port` | `server.port` | integer | Native integer in TOML |
+| `server.timeout.read` | `server.timeout.read` | integer | Nested table |
+| `database.primary.pool.max_idle_time` | `database.primary.pool.max_idle_time` | string | Duration as string |
+| `cache.nodes` | `cache.nodes` | array | TOML array syntax |
+| `logging.outputs` | `logging.outputs` | array | String array |
+| `allowed_origins` | `allowed_origins` | array | Top-level array |
+
+#### Type Conversions
+| Value | JSON Type | TOML Type | Notes |
+|-------|-----------|-----------|-------|
+| `8080` | number | integer | TOML distinguishes int/float |
+| `false` | boolean | boolean | Direct mapping |
+| `"5m"` | string | string | Duration remains string |
+| `["a", "b"]` | array | array | Direct mapping |
+| `null` | null | - | TOML has no null; omit or use empty string |
+
+#### Sensitive Values Warning
+```
+The following keys contain potentially sensitive values:
+- database.primary.credentials.password
+- database.replica.credentials.password
+- cache.password
+
+Recommendations:
+1. Use environment variable references in your application
+2. Consider TOML templating or external secrets injection
+3. Don't commit config files with real secrets to version control
+4. Example: Load password from env in application:
+   password = os.getenv("DB_PRIMARY_PASSWORD", config.get("database.primary.credentials.password"))
+```
+
+#### Framework-Specific Notes (Generic)
+1. TOML is commonly used with Rust (Cargo.toml), Python (pyproject.toml), and Go
+2. Most TOML parsers preserve type information better than JSON
+3. TOML supports inline tables: `timeout = { read = 30, write = 60 }`
+4. Comments are preserved in TOML (added section headers for documentation)
+5. Consider using TOML 1.0.0 spec for maximum compatibility
+
+#### Post-Conversion Steps
+1. Validate TOML syntax: `tomlcheck config.toml` or online validator
+2. Review sensitive values and implement secrets management
+3. Update application to use TOML parser (e.g., `toml` for Python, `toml-rs` for Rust)
+4. Adjust array formatting if inline style is preferred
+5. Add more descriptive comments for complex configuration options
+
+#### TOML-Specific Features
+```toml
+# TOML supports inline tables for compact representation:
+[server]
+timeout = { read = 30, write = 60, idle = 120 }
+
+# Multi-line arrays with trailing commas:
+allowed_origins = [
+    "https://app.example.com",
+    "https://admin.example.com",
+]
+
+# Dotted keys as alternative to nested tables:
+database.primary.driver = "postgres"
+database.primary.host = "db-primary.internal"
+
+# Array of tables for repeated structures:
+[[database.connections]]
+name = "primary"
+host = "db-primary.internal"
+
+[[database.connections]]
+name = "replica"
+host = "db-replica.internal"
+```
+
+#### Conversion Notes
+- JSON objects become TOML tables (bracketed sections or dotted keys)
+- JSON arrays map directly to TOML arrays with similar syntax
+- TOML preserves comments; add documentation during conversion
+- TOML distinguishes integers from floats (JSON uses generic number type)
+- Deeply nested structures can use either table sections or dotted keys
+- Consider using `[[array.of.tables]]` for repeated object structures

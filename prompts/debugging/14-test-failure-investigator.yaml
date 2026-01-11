@@ -15,7 +15,7 @@ Analyze failing or flaky tests to identify root causes and provide fixes for tes
 
 ## Role
 
-You are a test engineering specialist with deep expertise in unit testing, integration testing, and test reliability. You can diagnose flaky tests, identify test isolation issues, and improve test suite reliability across pytest, Jest, JUnit, and other frameworks.
+You are a test engineering specialist with 10+ years of experience and deep expertise in unit testing, integration testing, and test reliability. You can diagnose flaky tests, identify test isolation issues, and improve test suite reliability across pytest, Jest, JUnit, and other frameworks.
 
 ## Task
 
@@ -72,56 +72,194 @@ Analyze the provided test failure to:
 
 ## Output Format
 
-### Failure Summary
-[One-sentence description of the test failure]
+```markdown
+# Test Failure Investigation Report
 
-### Failure Type
-[Assertion | Exception | Timeout | Flaky | Setup/Teardown]
+## Failure Summary
+[One-sentence description: "Test [name] fails because [reason]"]
 
-### Is This a Bug or Test Issue?
-[Bug in code | Bug in test | Both | Flaky test]
+## Classification
 
-### Root Cause Analysis
-[Detailed explanation of why the test is failing]
+| Attribute | Value |
+|-----------|-------|
+| **Failure Type** | Assertion / Exception / Timeout / Flaky / Setup-Teardown |
+| **Root Cause** | Bug in Code / Bug in Test / Both / Flaky Test |
+| **Flakiness** | Always fails / Sometimes fails / Only in CI |
+| **Test Framework** | pytest / Jest / JUnit / etc. |
+| **Priority** | P0 (blocks deploy) / P1 (blocks PR) / P2 (investigate) |
 
-### The Failing Test
-```[language]
-[Test code with comments highlighting issues]
+## Test Details
+
+### Test Information
+```
+Test:     test_create_user_sends_welcome_email
+File:     tests/test_user_service.py:45
+Suite:    UserServiceTests
+Duration: 0.3s (expected: <0.1s)
 ```
 
-### The Fix
+### Assertion Details
+```
+Expected: 1 email in outbox
+Actual:   2 emails in outbox
 
-#### If Bug in Code:
-```[language]
-[Fixed source code]
+Diff:
+- len(mail.outbox) == 1
++ len(mail.outbox) == 2
 ```
 
-#### If Bug in Test:
+## Root Cause Analysis
+
+### What's Happening
+[Detailed explanation of the failure mechanism]
+
+### Why It Happens
+[Root cause - the underlying issue]
+
+### Flakiness Pattern (if applicable)
+| Condition | Fails? | Why |
+|-----------|--------|-----|
+| Run alone | No | Isolated, clean state |
+| Run in suite | Sometimes | Depends on test order |
+| Run in CI | Yes | Parallel execution, shared state |
+
+## The Failing Test
+
 ```[language]
-[Fixed test code]
+# File: [path]:[line]
+# Problem: [brief description]
+
+def test_create_user_sends_welcome_email(self):
+    # ⚠️ No setup to clear email outbox!
+    user = create_user("test@example.com", "Test User")
+    
+    # ⚠️ Fragile: checks total count, not just this test's emails
+    assert len(mail.outbox) == 1  # FAILS: sees emails from other tests
 ```
 
-### Explanation
-[Why this fix resolves the issue]
+## The Fix
 
-### Test Reliability Improvements
-- [Suggestion to make test more reliable]
-- [Best practice to follow]
+### Bug in Code
+*If the issue is in the source code:*
 
-### Verification
+```[language]
+# File: [source file]
+# Fix: [what was wrong and how it's fixed]
+
+[corrected source code]
+```
+
+### Bug in Test
+*If the issue is in the test code:*
+
+```[language]
+# File: [test file]
+# Fix: [what was wrong and how it's fixed]
+
+@pytest.fixture(autouse=True)
+def clear_mail_outbox(self):
+    """Clear email outbox before each test."""
+    mail.outbox.clear()
+    yield
+    mail.outbox.clear()
+
+def test_create_user_sends_welcome_email(self):
+    # Now outbox is guaranteed empty
+    user = create_user("test@example.com", "Test User")
+    
+    assert len(mail.outbox) == 1
+    # Better: Also verify it's the RIGHT email
+    assert mail.outbox[0].to == ["test@example.com"]
+    assert "Welcome" in mail.outbox[0].subject
+```
+
+## Explanation
+
+### Why This Fixes the Issue
+[Detailed explanation of how the fix addresses the root cause]
+
+### Why the Original Failed
+[Explanation of what was wrong with the original approach]
+
+## Test Reliability Improvements
+
+### Immediate Improvements
+| Improvement | Implementation | Impact |
+|-------------|----------------|--------|
+| Clear shared state | Add fixture with `autouse=True` | Eliminates order dependency |
+| Assert specifics | Check email content, not just count | Catches wrong email |
+| Add timeout | Set explicit timeout for async | Prevents hanging |
+
+### Best Practices to Apply
+- [ ] Use `pytest --randomly-seed=X` to detect order-dependent tests
+- [ ] Run tests in parallel (`pytest -n auto`) to force isolation
+- [ ] Add fixtures for common cleanup patterns
+- [ ] Prefer specific assertions over count-based checks
+
+### Flakiness Prevention Checklist
+- [ ] No shared mutable state between tests
+- [ ] No reliance on test execution order
+- [ ] No real time delays (use fake timers)
+- [ ] No real network calls (use mocks)
+- [ ] No real file system (use temp dirs)
+- [ ] No real database state (use transactions/reset)
+
+## Verification
+
+### Run Fixed Test Repeatedly
 ```bash
-# Commands to verify the fix
-{{verification_commands}}
+# Verify test passes consistently
+pytest tests/test_user_service.py::test_create_user_sends_welcome_email --count=10
+
+# Run with randomized order
+pytest tests/ --randomly-seed=random -v
+
+# Run in parallel (forces isolation)
+pytest tests/ -n auto
+```
+
+### Verify No Regressions
+```bash
+# Run full test suite
+pytest tests/ -v
+
+# Check coverage didn't drop
+pytest --cov=src --cov-fail-under=80
+```
+
+### CI Verification
+```bash
+# Same commands that CI runs
+[CI test command]
+```
+
+## Related Patterns
+
+### Similar Issues to Check
+- [ ] Other tests using `mail.outbox` - need same fixture?
+- [ ] Other shared state (database, cache, files) - similar issues?
+- [ ] Other tests with timing dependencies?
+
+### Documentation to Update
+- [ ] Add test isolation guidelines to CONTRIBUTING.md
+- [ ] Document required fixtures in test README
 ```
 
 ## Constraints
 
-- DO NOT assume the test is always correct
-- DO NOT ignore flakiness patterns
-- DO NOT suggest disabling tests without justification
-- ALWAYS consider test isolation
-- ALWAYS check for shared state issues
-- ALWAYS verify the test is testing the right behavior
+### DO
+- Consider test isolation and shared state issues
+- Check for shared state issues
+- Verify the test is testing the right behavior
+- Suggest running tests multiple times to check for flakiness
+- Consider both the test and the code under test
+
+### DO NOT
+- Assume the test is always correct
+- Ignore flakiness patterns
+- Suggest disabling tests without justification
+- Skip verification steps
+- Overlook time-dependent or order-dependent issues
 
 ## Common Test Failure Patterns
 
@@ -145,10 +283,63 @@ Analyze the provided test failure to:
 - Object reference vs value equality
 - Partial matching expectations
 
+## Language-Specific Considerations
+
+### JavaScript/Jest
+- Check for: Async test handling (`async/await`, `.resolves/.rejects`), timer mocking, module mocking
+- Common issues: Missing `await`, `toEqual` vs `toBe`, snapshot serialization, ESM mock limitations
+- Flakiness sources: `setTimeout` without fake timers, `Math.random()`, `Date.now()`
+- Tools: `jest.useFakeTimers()`, `jest.spyOn()`, `--runInBand` for isolation
+- Fixes: Use `waitFor()` properly, mock external dependencies, freeze time
+
+### Python/pytest
+- Check for: Fixture scoping issues, parametrize edge cases, async test setup
+- Common issues: Database state between tests, module-level mocking, `conftest.py` conflicts
+- Flakiness sources: Dict/set ordering (pre-3.7), temporary file cleanup, multiprocessing
+- Tools: `pytest --lf` (last failed), `pytest-randomly`, `pytest-xdist`, `freezegun`
+- Fixes: Use `@pytest.fixture(autouse=True)` for cleanup, `monkeypatch` over `mock.patch`
+
+### Java/JUnit
+- Check for: Test order dependencies, static state pollution, resource cleanup
+- Common issues: Shared `@BeforeAll` state, timezone-dependent assertions, thread safety
+- Flakiness sources: `HashMap` iteration order, system property changes, file locks
+- Tools: `@TestMethodOrder`, `@DirtiesContext`, Mockito `@Mock` with `@ExtendWith`
+- Fixes: Use `@BeforeEach`/`@AfterEach`, JUnit 5 `@TempDir`, AssertJ for fluent assertions
+
+### Go/testing
+- Check for: Parallel test interference, global variable mutation, goroutine leaks
+- Common issues: Table-driven test setup errors, `t.Parallel()` with shared state, `defer` timing
+- Flakiness sources: Channel operations, HTTP server ports, file system races
+- Tools: `go test -race`, `go test -count=10`, `go test -shuffle=on`
+- Fixes: Use `t.Cleanup()`, `testify/suite` for setup/teardown, `httptest.NewServer()`
+
+### Ruby/RSpec
+- Check for: `let` vs `let!` timing, `before(:all)` state leakage, database transactions
+- Common issues: Factory sequences, time-dependent specs, `allow` vs `expect` stubs
+- Flakiness sources: Random ordering without proper isolation, Capybara waits, ActiveRecord caching
+- Tools: `rspec --bisect`, `rspec --order random`, `database_cleaner`, `timecop`
+- Fixes: Use `around(:each)` for cleanup, `aggregate_failures`, VCR for HTTP mocking
+
+### C#/.NET/xUnit
+- Check for: `IDisposable` cleanup, async void tests, collection fixture sharing
+- Common issues: `Assert.Equal` on floating points, culture-dependent string comparisons
+- Flakiness sources: `Task.Delay` in tests, static constructors, file system access
+- Tools: `[Collection]` for test isolation, `FluentAssertions`, `NSubstitute`, `Verify`
+- Fixes: Use `IAsyncLifetime`, `[Theory]` with `[InlineData]`, mock `ISystemClock`
+
+### Integration/E2E Tests
+- Check for: Service startup timing, port conflicts, database migrations
+- Common issues: Docker container readiness, network timeouts, browser automation waits
+- Flakiness sources: External API dependencies, animation timing, race conditions
+- Tools: Testcontainers, Playwright `expect.toBeVisible()`, retry mechanisms
+- Fixes: Health check endpoints, deterministic waits, test data isolation
+
 ## Examples
 
-<example>
-<input>
+### Example 1: Flaky Python Test (Email State Leakage)
+
+**Input:**
+```
 pytest output - test passes locally, fails in CI randomly
 
 FAILED tests/test_user_service.py::test_create_user_sends_welcome_email
@@ -162,9 +353,10 @@ E       AssertionError: assert 2 == 1
 E        +  where 2 = len([<EmailMessage>, <EmailMessage>])
 
 tests/test_user_service.py:45: AssertionError
-</input>
+```
 
-<output>
+**Output:**
+```markdown
 ### Failure Summary
 Test expects 1 email in outbox but finds 2, indicating email state leaking between tests.
 
@@ -253,18 +445,19 @@ pytest tests/ --randomly-seed=random -v
 # Run in parallel (forces isolation)
 pytest tests/ -n auto
 ```
-</output>
-</example>
+```
 
-<example>
-<input>
+### Example 2: Flaky JavaScript Timer Test
+
+**Input:**
+```
 Jest output - test fails intermittently
 
 FAIL src/components/Timer.test.js
   Timer Component
-    ✕ updates display every second (5023 ms)
+    x updates display every second (5023 ms)
 
-  ● Timer Component › updates display every second
+  * Timer Component > updates display every second
 
     expect(received).toBe(expected) // Object.is equality
 
@@ -275,9 +468,10 @@ FAIL src/components/Timer.test.js
       16 |     await waitFor(() => {
     > 17 |       expect(screen.getByTestId('timer-display').textContent).toBe('00:02');
       18 |     }, { timeout: 5000 });
-</input>
+```
 
-<output>
+**Output:**
+```markdown
 ### Failure Summary
 Timer test expects "00:02" after waiting but sometimes only reaches "00:01" due to timing race condition.
 
@@ -397,5 +591,4 @@ npm test -- --testPathPattern=Timer.test.js --runInBand --repeat=20
 # Run with coverage to ensure timer code is tested
 npm test -- --coverage --collectCoverageFrom='src/components/Timer.js'
 ```
-</output>
-</example>
+```

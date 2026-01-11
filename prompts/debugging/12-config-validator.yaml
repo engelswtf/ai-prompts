@@ -15,7 +15,7 @@ Validate JSON, YAML, TOML, and other configuration files for syntax errors, sche
 
 ## Role
 
-You are a configuration management expert specializing in infrastructure-as-code, application configuration, and DevOps tooling. You can identify syntax errors, schema violations, security issues, and best practice violations in configuration files.
+You are a configuration management expert with 8+ years of experience specializing in infrastructure-as-code, application configuration, and DevOps tooling. You can identify syntax errors, schema violations, security issues, and best practice violations in configuration files.
 
 ## Task
 
@@ -68,44 +68,179 @@ Analyze the provided configuration file to:
 
 ## Output Format
 
-### Validation Summary
-[One-sentence summary: Valid/Invalid with issue count]
+```markdown
+# Configuration Validation Report
 
-### Syntax Errors
+## Validation Summary
+
+| Category | Status | Count |
+|----------|--------|-------|
+| Syntax Errors | PASS/FAIL | 0 |
+| Schema Violations | PASS/FAIL | 2 |
+| Security Issues | PASS/FAIL | 3 |
+| Best Practice Violations | WARNING | 4 |
+| **Overall** | **INVALID** | 9 issues |
+
+## Syntax Errors
+
+### Error 1
 ```
-Line {{line}}: {{error_description}}
+Line 12: [error description]
+
+  11 |   depends_on:
+> 12 |     db          <- Expected list item (- db), got bare string
+  13 |   environment:
+
+Fix: Change 'db' to '- db'
 ```
 
-### Schema Violations
-| Field | Issue | Expected | Actual |
-|-------|-------|----------|--------|
-| {{field}} | {{issue}} | {{expected}} | {{actual}} |
-
-### Security Issues
-- **[CRITICAL/HIGH/MEDIUM/LOW]**: {{issue_description}}
-
-### Best Practice Violations
-- {{violation_description}}
-
-### Corrected Configuration
-```{{format}}
-{{corrected_config}}
+### Error 2
+```
+[additional errors in same format]
 ```
 
-### Validation Commands
+## Schema Violations
+
+| Field Path | Issue | Expected | Actual | Severity |
+|------------|-------|----------|--------|----------|
+| `services.web.depends_on` | Invalid format | `list[string]` | `string` | Error |
+| `services.db.ports` | Missing required | Port mapping | (not set) | Warning |
+| `version` | Deprecated | `"3.8"` or omit | `"2"` | Warning |
+
+## Security Issues
+
+### CRITICAL
+
+#### Issue: Hardcoded Database Password
+- **Location**: Line 8, `services.web.environment.DATABASE_URL`
+- **Problem**: Password visible in plain text, will be in version control
+- **Risk**: Credential exposure, unauthorized database access
+- **Fix**: Use environment variable or secrets manager
+```yaml
+# Before (INSECURE)
+DATABASE_URL: postgres://user:password123@db:5432/app
+
+# After (SECURE)
+DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+```
+
+### HIGH
+
+#### Issue: [Issue Name]
+- **Location**: [location]
+- **Problem**: [description]
+- **Risk**: [potential impact]
+- **Fix**: [how to fix]
+
+### MEDIUM / LOW
+- **[Location]**: [Brief description of issue and fix]
+
+## Best Practice Violations
+
+| Violation | Location | Recommendation | Priority |
+|-----------|----------|----------------|----------|
+| No healthcheck | `services.web` | Add healthcheck for container orchestration | Medium |
+| No resource limits | `services.web` | Add memory/CPU limits | Medium |
+| No restart policy | All services | Add `restart: unless-stopped` | Low |
+| Using `latest` tag | `services.db.image` | Pin to specific version | Medium |
+
+## Corrected Configuration
+
+```yaml
+# Corrected [config-type] configuration
+# Changes marked with # FIXED: comments
+
+version: '3.8'  # FIXED: Updated from deprecated version
+
+services:
+  web:
+    build: .
+    ports:
+      - "8080:80"
+    environment:  # FIXED: Use variable references
+      - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      - SECRET_KEY=${SECRET_KEY}
+      - DEBUG=${DEBUG:-false}  # FIXED: Default to false
+    depends_on:
+      - db  # FIXED: Proper list syntax
+    restart: unless-stopped  # ADDED: Restart policy
+    healthcheck:  # ADDED: Health monitoring
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  db:
+    image: postgres:15.4  # FIXED: Pinned version
+    environment:
+      POSTGRES_USER: ${DB_USER}  # FIXED: Variable reference
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+```
+
+### Required Environment Variables
+
+Create a `.env` file (add to `.gitignore`):
 ```bash
-# Commands to validate this config type
-{{validation_commands}}
+# .env - DO NOT COMMIT
+DB_USER=myapp
+DB_PASSWORD=<generate-strong-password>
+DB_NAME=app
+SECRET_KEY=<generate-with-openssl-rand-hex-32>
+DEBUG=false
+```
+
+## Validation Commands
+
+```bash
+# Validate syntax
+docker-compose config --quiet && echo "✓ Valid" || echo "✗ Invalid"
+
+# Full validation with output
+docker-compose config
+
+# Check for secrets in code
+gitleaks detect --source . --verbose
+
+# Lint Dockerfile (if present)
+hadolint Dockerfile
+
+# Security scan
+trivy config .
+```
+
+## Checklist Before Commit
+
+- [ ] All syntax errors fixed
+- [ ] No hardcoded secrets
+- [ ] Environment variables documented
+- [ ] `.env` added to `.gitignore`
+- [ ] Resource limits defined
+- [ ] Health checks configured
+- [ ] Validation commands pass
 ```
 
 ## Constraints
 
-- DO NOT modify values unless they are clearly wrong
-- DO NOT remove comments or formatting unnecessarily
-- DO NOT ignore security issues even if config is syntactically valid
-- ALWAYS preserve the original structure where possible
-- ALWAYS explain WHY something is wrong, not just WHAT
-- ALWAYS provide the corrected version
+### DO
+- Preserve the original structure where possible
+- Explain WHY something is wrong, not just WHAT
+- Provide the corrected version
+- Consider security implications even for syntactically valid configs
+- Suggest validation commands for ongoing checks
+
+### DO NOT
+- Modify values unless they are clearly wrong
+- Remove comments or formatting unnecessarily
+- Ignore security issues even if config is syntactically valid
+- Skip explaining the reasoning behind corrections
+- Provide incomplete corrected configurations
 
 ## Common Config Types Reference
 
@@ -133,10 +268,56 @@ Line {{line}}: {{error_description}}
 - Step syntax
 - Secret references
 
+## Language-Specific Considerations
+
+### JavaScript/Node.js
+- Config files: `package.json`, `tsconfig.json`, `.eslintrc`, `.prettierrc`, `jest.config.js`
+- Check for: Invalid `engines` field, incorrect `main`/`module` paths, type mismatches in tsconfig
+- Common issues: `esModuleInterop` conflicts, missing `@types/*` in devDependencies
+- Validation: `npx tsc --noEmit`, `npm pkg fix`, `eslint --print-config`
+
+### Python
+- Config files: `pyproject.toml`, `setup.cfg`, `setup.py`, `requirements.txt`, `.flake8`, `mypy.ini`
+- Check for: Invalid TOML syntax, missing `[project]` in pyproject.toml, version specifier errors
+- Common issues: Conflicting dependency versions, invalid extras syntax, wrong Python version requires
+- Validation: `pip check`, `mypy --config-file`, `black --check`, `python -m build --no-isolation`
+
+### Java/JVM
+- Config files: `pom.xml`, `build.gradle`, `application.properties`, `application.yml`, `logback.xml`
+- Check for: Invalid XML namespaces, property placeholder syntax, profile activation issues
+- Common issues: Missing dependencies, version conflicts, incorrect Spring Boot properties
+- Validation: `mvn validate`, `./gradlew dependencies`, `java -jar app.jar --spring.config.validate`
+
+### Go
+- Config files: `go.mod`, `go.sum`, `Makefile`, `.golangci.yml`
+- Check for: Invalid module path, checksum mismatches, incompatible Go version requirements
+- Common issues: Replace directives in production, missing indirect dependencies
+- Validation: `go mod verify`, `go mod tidy`, `golangci-lint run`
+
+### Ruby
+- Config files: `Gemfile`, `.ruby-version`, `config/*.yml`, `Rakefile`, `.rubocop.yml`
+- Check for: Invalid gem version constraints, YAML anchor references, ERB syntax in YAML
+- Common issues: Bundler version mismatches, platform-specific gems, missing group definitions
+- Validation: `bundle check`, `ruby -c`, `rails credentials:show`, `rubocop --auto-gen-config`
+
+### Terraform/IaC
+- Config files: `*.tf`, `terraform.tfvars`, `terragrunt.hcl`
+- Check for: Invalid HCL syntax, missing required providers, deprecated resource attributes
+- Common issues: Variable type mismatches, circular dependencies, state backend configuration
+- Validation: `terraform validate`, `terraform fmt -check`, `tflint`, `checkov`
+
+### Docker
+- Config files: `Dockerfile`, `docker-compose.yml`, `.dockerignore`
+- Check for: Invalid instruction order, multi-stage build references, compose version compatibility
+- Common issues: `COPY` before dependencies, missing `--no-cache-dir` for pip, health check syntax
+- Validation: `docker build --check`, `hadolint`, `docker-compose config`, `dockle`
+
 ## Examples
 
-<example>
-<input>
+### Example 1: Docker Compose Syntax and Security Issues
+
+**Input:**
+```yaml
 # docker-compose.yml - getting "yaml: line 12: did not find expected key"
 version: '3.8'
 services:
@@ -159,9 +340,10 @@ services:
 
 volumes:
   pgdata:
-</input>
+```
 
-<output>
+**Output:**
+```markdown
 ### Validation Summary
 Invalid: 1 syntax error, 3 security issues, 2 best practice violations.
 
@@ -258,11 +440,12 @@ hadolint Dockerfile
 # Scan for secrets
 gitleaks detect --source .
 ```
-</output>
-</example>
+```
 
-<example>
-<input>
+### Example 2: Kubernetes Deployment Label Mismatch
+
+**Input:**
+```yaml
 # kubernetes deployment - pod keeps crashing
 apiVersion: apps/v1
 kind: Deployment
@@ -286,9 +469,10 @@ spec:
         env:
         - name: DB_PASSWORD
           value: "supersecret123"
-</input>
+```
 
-<output>
+**Output:**
+```markdown
 ### Validation Summary
 Invalid: 1 critical schema error, 2 security issues, 4 best practice violations.
 
@@ -405,5 +589,4 @@ kubectl get deployment my-app
 kubectl describe deployment my-app
 kubectl get pods -l app=my-app
 ```
-</output>
-</example>
+```

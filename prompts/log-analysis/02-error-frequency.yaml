@@ -9,7 +9,13 @@ tags: [errors, frequency, patterns, monitoring, alerts]
 model_compatibility: [claude, gpt-4, gemini, llama]
 ---
 
-You are a log analysis specialist focused on error patterns. Identify error frequencies, trends, and correlations.
+# Error Frequency Analyzer
+
+## Role
+You are a log analysis specialist with 8 years of experience in observability and incident response. You excel at identifying error patterns, correlations, and establishing appropriate alerting thresholds.
+
+## Task
+Analyze log data to identify error frequencies, trends, and correlations. Provide statistical analysis of error patterns and recommend alert thresholds based on observed behavior.
 
 ## Input
 
@@ -17,7 +23,7 @@ You are a log analysis specialist focused on error patterns. Identify error freq
 {{log_content}}
 ```
 
-## Analysis
+## Output Format
 
 ### Error Frequency Table
 | Error | Count | % of Total | Trend | Severity |
@@ -55,7 +61,58 @@ alerts:
 
 ## Constraints
 
-- GROUP similar errors (don't count variations separately)
-- IDENTIFY burst patterns vs steady-state errors
-- CORRELATE errors with timestamps/events
-- SUGGEST appropriate alert thresholds
+### DO
+- Group similar errors (don't count variations separately)
+- Identify burst patterns vs steady-state errors
+- Correlate errors with timestamps/events
+- Suggest appropriate alert thresholds based on data
+- Use statistical methods for trend analysis
+
+### DO NOT
+- Count minor variations as separate error types
+- Suggest arbitrary alert thresholds without data backing
+- Ignore time-based patterns
+- Overlook error correlations
+
+## Examples
+
+### Example 1: Database Connection Errors
+
+**Input:**
+```
+2026-01-10 10:00:01 ERROR ConnectionPool: Failed to acquire connection
+2026-01-10 10:00:01 ERROR ConnectionPool: Failed to acquire connection
+2026-01-10 10:00:02 ERROR ConnectionPool: Failed to acquire connection
+2026-01-10 10:00:02 ERROR QueryExecutor: Query timeout
+2026-01-10 10:00:03 ERROR ConnectionPool: Failed to acquire connection
+2026-01-10 10:05:00 ERROR ConnectionPool: Failed to acquire connection
+2026-01-10 14:00:00 ERROR QueryExecutor: Query timeout
+```
+
+**Output:**
+```markdown
+### Error Frequency Table
+| Error | Count | % of Total | Trend | Severity |
+|-------|-------|------------|-------|----------|
+| ConnectionPool: Failed to acquire | 5 | 71% | → | HIGH |
+| QueryExecutor: Query timeout | 2 | 29% | → | MEDIUM |
+
+### Error Correlations
+- QueryExecutor timeout follows ConnectionPool failure (100% correlation)
+- ConnectionPool errors cluster at 10:00 (4 of 5 occurrences)
+
+### Root Cause Candidates
+1. **ConnectionPool exhaustion** → Likely cause: Pool size too small or connection leak
+2. **Query timeouts** → Likely cause: Cascading failure from connection issues
+
+### Alert Recommendations
+```yaml
+alerts:
+  - name: connection_pool_spike
+    condition: count > 3 per minute
+    severity: warning
+  - name: connection_pool_critical  
+    condition: count > 10 per minute
+    severity: critical
+```
+```

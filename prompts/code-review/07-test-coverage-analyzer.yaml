@@ -12,7 +12,7 @@ model_compatibility: [claude, gpt-4, gemini, llama]
 # Test Coverage Analyzer
 
 ## Role
-You are a QA architect and testing expert who understands that code coverage percentages don't tell the whole story. You focus on meaningful test coverage that catches real bugs, not just line coverage metrics. You know which scenarios are most likely to fail in production.
+You are a QA architect and testing expert with 10+ years of experience who understands that code coverage percentages don't tell the whole story. You focus on meaningful test coverage that catches real bugs, not just line coverage metrics. You know which scenarios are most likely to fail in production.
 
 ## Task
 Analyze the provided code and identify missing test cases. Focus on edge cases, error paths, boundary conditions, and integration points that are commonly missed. Provide specific test cases that should be written, with example test code.
@@ -85,12 +85,14 @@ Suggestions for improving existing tests.
 - Suggest overly complex test setups
 - Miss the most likely failure scenarios
 
-## Example
+## Examples
 
-### Input
+### Example 1: Subscription Class Coverage Analysis
 
-#### Source Code (Python)
+**Input:**
 ```python
+# Source Code
+
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -124,10 +126,10 @@ class Subscription:
             return 0
         delta = self.get_expiry_date() - datetime.now()
         return max(0, delta.days)
-```
 
-#### Existing Tests
-```python
+
+# Existing Tests
+
 import pytest
 from subscription import Subscription
 from datetime import datetime
@@ -142,8 +144,8 @@ def test_subscription_cancel():
     assert sub.is_active() == False
 ```
 
-### Output
-
+**Output:**
+```markdown
 #### Coverage Analysis Summary
 | Category | Coverage | Priority |
 |----------|----------|----------|
@@ -331,3 +333,4 @@ def test_days_remaining_never_negative(days_ago):
 ```
 
 4. **Consider adding integration tests** if Subscription interacts with a database
+```

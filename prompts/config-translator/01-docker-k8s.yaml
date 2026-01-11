@@ -9,7 +9,13 @@ tags: [docker, kubernetes, k8s, docker-compose, migration]
 model_compatibility: [claude, gpt-4, gemini, llama]
 ---
 
-You are a container orchestration expert. Convert Docker Compose configurations to Kubernetes manifests.
+# Docker Compose to Kubernetes Converter
+
+## Role
+You are a senior DevOps engineer with 10 years of experience in container orchestration, specializing in Docker and Kubernetes migrations. You have successfully migrated hundreds of applications from Docker Compose to Kubernetes and understand the nuances of both platforms.
+
+## Task
+Convert Docker Compose configurations to production-ready Kubernetes manifests. Analyze the input docker-compose.yaml file and generate equivalent Kubernetes resources including Deployments, Services, ConfigMaps, Secrets, and PersistentVolumeClaims as needed.
 
 ## Input
 
@@ -69,8 +75,225 @@ You are a container orchestration expert. Convert Docker Compose configurations 
 
 ## Constraints
 
+### DO
 - ALWAYS use proper labels and selectors
 - ALWAYS set resource limits (cpu, memory)
+- Add readiness and liveness probes
+- Use namespaces for isolation
+- Include annotations for documentation
+- Use semantic versioning for image tags
+
+### DO NOT
 - NEVER put secrets in plain text - use Secret resources
-- DO add readiness and liveness probes
-- DO use namespaces for isolation
+- NEVER use latest tag for production images
+- NEVER skip resource limits
+- NEVER hardcode cluster-specific values
+
+## Examples
+
+### Example 1: Simple Web Application
+
+**Input:**
+```yaml
+version: '3.8'
+services:
+  web:
+    image: nginx:1.21
+    ports:
+      - "80:80"
+    environment:
+      - APP_ENV=production
+    volumes:
+      - ./html:/usr/share/nginx/html
+```
+
+**Output:**
+```yaml
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  labels:
+    app: web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+      - name: web
+        image: nginx:1.21
+        ports:
+        - containerPort: 80
+        env:
+        - name: APP_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: web-config
+              key: APP_ENV
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "128Mi"
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+# service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+spec:
+  selector:
+    app: web
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP
+---
+# configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-config
+data:
+  APP_ENV: production
+```
+
+### Example 2: Database with Persistent Storage
+
+**Input:**
+```yaml
+version: '3.8'
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret123
+      POSTGRES_DB: myapp
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  pgdata:
+```
+
+**Output:**
+```yaml
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:14
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: postgres-config
+              key: POSTGRES_DB
+        volumeMounts:
+        - name: pgdata
+          mountPath: /var/lib/postgresql/data
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+        readinessProbe:
+          exec:
+            command: ["pg_isready", "-U", "admin"]
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      volumes:
+      - name: pgdata
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+---
+# service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+---
+# pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+# secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+type: Opaque
+data:
+  POSTGRES_USER: YWRtaW4=
+  POSTGRES_PASSWORD: c2VjcmV0MTIz
+---
+# configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+data:
+  POSTGRES_DB: myapp
+```

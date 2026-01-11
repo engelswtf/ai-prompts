@@ -12,7 +12,7 @@ model_compatibility: [claude, gpt-4, gemini, llama]
 # Reverse Proxy Configuration Converter
 
 ## Role
-You are an expert in web server and reverse proxy configurations. You translate configurations between Nginx, Traefik, and Caddy while preserving functionality and applying target-platform best practices.
+You are an expert in web server and reverse proxy configurations with 10+ years of experience. You translate configurations between Nginx, Traefik, and Caddy while preserving functionality and applying target-platform best practices.
 
 ## Task
 Convert the provided reverse proxy configuration from the source format to the target format.
@@ -87,7 +87,9 @@ CONFIG:
 
 ## Examples
 
-### Input
+### Example 1: Nginx to Caddy Basic Reverse Proxy
+
+**Input:**
 ```
 SOURCE_FORMAT: nginx
 TARGET_FORMAT: caddy
@@ -118,7 +120,7 @@ server {
 }
 ```
 
-### Output
+**Output:**
 
 #### Analysis
 - **Source**: Nginx
@@ -161,3 +163,174 @@ example.com {
 #### Warnings
 - Caddy's automatic HTTPS may conflict with existing certificates
 - HTTP/2 is enabled by default in Caddy (no explicit config needed)
+
+#### Conversion Notes
+- Nginx's separate HTTP/HTTPS server blocks are unified in Caddy
+- Caddy's automatic HTTPS handles redirects implicitly
+- Header directives use `header_up` inside `reverse_proxy` blocks
+- Path matching uses glob patterns (`/api*`) vs Nginx's prefix matching
+
+---
+
+### Example 2: Load Balanced Application with Rate Limiting
+
+**Input:**
+```
+SOURCE_FORMAT: traefik
+TARGET_FORMAT: nginx
+CONFIG:
+# traefik.yml
+entryPoints:
+  web:
+    address: ":80"
+  websecure:
+    address: ":443"
+
+providers:
+  file:
+    filename: /etc/traefik/dynamic.yml
+
+# dynamic.yml
+http:
+  routers:
+    api-router:
+      rule: "Host(`api.example.com`) && PathPrefix(`/v1`)"
+      entryPoints:
+        - websecure
+      service: api-service
+      middlewares:
+        - rate-limit
+        - auth-headers
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    api-service:
+      loadBalancer:
+        servers:
+          - url: "http://10.0.1.10:8080"
+          - url: "http://10.0.1.11:8080"
+          - url: "http://10.0.1.12:8080"
+        healthCheck:
+          path: /health
+          interval: 10s
+          timeout: 3s
+
+  middlewares:
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 50
+        period: 1m
+    auth-headers:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Proto: https
+          X-Real-IP: ""
+```
+
+**Output:**
+
+#### Analysis
+- **Source**: Traefik v2
+- **Target**: Nginx
+- **Features Detected**: Load balancing, rate limiting, health checks, custom headers, TLS
+- **Conversion Complexity**: Complex
+
+#### Converted Configuration
+```nginx
+# /etc/nginx/nginx.conf
+
+# Rate limiting zone (100 req/min = ~1.67 req/sec)
+limit_req_zone $binary_remote_addr zone=api_limit:10m rate=2r/s;
+
+upstream api_backend {
+    # Load balanced servers
+    server 10.0.1.10:8080;
+    server 10.0.1.11:8080;
+    server 10.0.1.12:8080;
+
+    # Health check (requires nginx_upstream_check_module or nginx plus)
+    # For open source nginx, use passive health checks
+    keepalive 32;
+}
+
+server {
+    listen 80;
+    server_name api.example.com;
+    
+    # Redirect HTTP to HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name api.example.com;
+
+    # SSL configuration (adjust paths for your cert resolver)
+    ssl_certificate /etc/letsencrypt/live/api.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
+    ssl_prefer_server_ciphers off;
+
+    location /v1 {
+        # Rate limiting (burst=50)
+        limit_req zone=api_limit burst=50 nodelay;
+        limit_req_status 429;
+
+        proxy_pass http://api_backend;
+        proxy_http_version 1.1;
+        
+        # Connection keepalive
+        proxy_set_header Connection "";
+        
+        # Custom headers (from auth-headers middleware)
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $host;
+
+        # Timeouts matching health check settings
+        proxy_connect_timeout 3s;
+        proxy_read_timeout 30s;
+    }
+
+    # Health check endpoint for monitoring
+    location /health {
+        proxy_pass http://api_backend/health;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+    }
+}
+```
+
+#### Feature Mapping Table
+| Feature | Traefik | Nginx | Notes |
+|---------|---------|-------|-------|
+| Host matching | `Host(\`...\`)` | `server_name` | Direct mapping |
+| Path prefix | `PathPrefix(\`/v1\`)` | `location /v1` | Direct mapping |
+| Load balancer | `loadBalancer.servers` | `upstream` block | Uses round-robin by default |
+| Rate limit avg | `rateLimit.average: 100` | `limit_req_zone rate=2r/s` | Converted to per-second |
+| Rate limit burst | `rateLimit.burst: 50` | `burst=50 nodelay` | Direct mapping |
+| Health check | `healthCheck.path` | External or nginx plus | OSS nginx uses passive checks |
+| Custom headers | `customRequestHeaders` | `proxy_set_header` | Direct mapping |
+| TLS | `tls.certResolver` | `ssl_certificate` | Manual cert path required |
+
+#### Manual Steps Required
+1. Install SSL certificates or configure certbot for Let's Encrypt
+2. For active health checks, either use Nginx Plus or implement external monitoring
+3. Adjust rate limit values if needed (Traefik's per-minute vs Nginx's per-second)
+4. Test load balancing behavior and adjust upstream settings
+
+#### Warnings
+- Nginx OSS lacks active health checks; servers marked down only after failures
+- Rate limit conversion from per-minute to per-second may need fine-tuning
+- Traefik's dynamic configuration requires nginx reload for changes
+- Ensure Let's Encrypt cert paths match your certbot configuration
+
+#### Conversion Notes
+- Traefik's declarative middleware chain maps to inline Nginx directives
+- Traefik's `average` rate is per-minute; Nginx uses per-second (`100/min ≈ 2/sec`)
+- Traefik's dynamic discovery doesn't exist in Nginx; use config management
+- For high availability, consider nginx plus or external health check systems

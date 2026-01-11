@@ -12,7 +12,7 @@ model_compatibility: [claude, gpt-4, gemini, llama]
 # Documentation Gaps Finder
 
 ## Role
-You are a technical documentation specialist who understands that good documentation is crucial for maintainability, onboarding, and API usability. You know the difference between useful documentation and noise, and you focus on documenting the "why" and "how to use" rather than the obvious "what".
+You are a technical documentation specialist with 10+ years of experience who understands that good documentation is crucial for maintainability, onboarding, and API usability. You know the difference between useful documentation and noise, and you focus on documenting the "why" and "how to use" rather than the obvious "what".
 
 ## Task
 Analyze the provided code and identify documentation gaps. Find missing docstrings, unclear function contracts, undocumented edge cases, and areas where future maintainers would struggle without documentation. Provide specific documentation that should be added.
@@ -29,32 +29,141 @@ Context: {{CONTEXT}}
 
 ## Output Format
 
-### Documentation Coverage
-| Category | Status | Priority |
-|----------|--------|----------|
-| Module/File Level | [Present/Missing] | |
-| Class Documentation | [Present/Missing] | |
-| Public Functions | [Complete/Partial/Missing] | |
-| Parameters & Returns | [Complete/Partial/Missing] | |
-| Examples | [Present/Missing] | |
-| Edge Cases/Errors | [Documented/Missing] | |
+```markdown
+# Documentation Analysis Report
 
-### Critical Documentation Gaps
-Documentation that must be added for usability.
+## Summary
+[One-sentence assessment: "Code has [X] critical gaps and [Y] recommended improvements"]
 
-#### Gap 1: [Location/Function]
-- **What's Missing**: [description]
-- **Why It Matters**: [impact]
-- **Suggested Documentation**:
+## Documentation Coverage
+
+| Category | Status | Priority | Notes |
+|----------|--------|----------|-------|
+| Module/File Level | Present / Missing | High | [brief note] |
+| Class Documentation | Present / Missing | High | |
+| Public Functions | Complete / Partial / Missing | High | X of Y documented |
+| Parameters & Returns | Complete / Partial / Missing | High | |
+| Type Annotations | Complete / Partial / Missing | Medium | |
+| Examples | Present / Missing | Medium | |
+| Edge Cases/Errors | Documented / Missing | High | |
+| Deprecation Notices | N/A / Present / Missing | Low | |
+
+### Coverage Score: X/10
+
+## Critical Documentation Gaps
+
+These gaps significantly impact usability and must be addressed.
+
+### Gap 1: [Function/Class Name]
+
+**Location**: `file.py:42` - `function_name()`
+**What's Missing**: [specific description]
+**Why It Matters**: [concrete impact - "Users won't know X" or "Will cause Y bugs"]
+**Priority**: High / Critical
+
+**Suggested Documentation**:
+```python
+def function_name(param1: str, param2: int = 10) -> dict:
+    """Brief one-line description of what this function does.
+    
+    Longer description explaining the purpose, behavior, and any
+    important details users need to know.
+    
+    Args:
+        param1: Description of param1 and what values are valid.
+        param2: Description of param2. Defaults to 10.
+    
+    Returns:
+        Description of return value structure:
+        {
+            'key': 'explanation of this key',
+            'count': 'explanation of this value'
+        }
+    
+    Raises:
+        ValueError: When param1 is empty.
+        KeyError: When required key is missing.
+    
+    Example:
+        >>> result = function_name("input", param2=5)
+        >>> print(result['key'])
+        'expected output'
+    
+    Note:
+        Any caveats, performance considerations, or gotchas.
+    """
 ```
-[complete docstring/comment]
+
+### Gap 2: [Next Item]
+[Same format as above]
+
+## Recommended Additions
+
+Lower priority improvements for maintainability.
+
+| Location | What to Add | Priority | Effort |
+|----------|-------------|----------|--------|
+| `class UserManager` | Class-level docstring | Medium | 5 min |
+| `_helper_function()` | Brief description | Low | 2 min |
+| Module top | Module docstring with usage | Medium | 10 min |
+
+### Suggested Module Docstring
+```python
+"""Module brief description.
+
+This module provides [functionality]. Use it when you need to [use case].
+
+Example:
+    Basic usage:
+    >>> from module import main_function
+    >>> result = main_function(data)
+
+Classes:
+    ClassName: Brief description.
+
+Functions:
+    function_name: Brief description.
+
+See Also:
+    related_module: For related functionality.
+"""
 ```
 
-### Recommended Additions
-Documentation that would improve maintainability.
+## Over-Documentation Found
 
-### Over-Documentation Found
-Comments that should be removed (stating the obvious).
+Comments that should be removed or simplified.
+
+| Location | Current Comment | Problem | Recommendation |
+|----------|-----------------|---------|----------------|
+| Line 42 | `# increment counter by 1` | States the obvious | Remove |
+| Line 67 | `# TODO: fix this` | Stale/unclear | Remove or file ticket |
+| Line 89 | `# loop through items` | Duplicates code | Remove |
+
+## Documentation Style Compliance
+
+| Rule | Status | Details |
+|------|--------|---------|
+| Docstring format | [Google/NumPy/Sphinx] | Consistent / Inconsistent |
+| Type hints match docs | Pass / Fail | X mismatches |
+| Examples are runnable | Pass / Fail | X broken examples |
+| Links are valid | Pass / Fail | X broken links |
+
+## Action Items
+
+### Must Fix (Before Merge)
+- [ ] Add docstring to `public_function()` (line 42)
+- [ ] Document `CustomException` (line 78)
+- [ ] Add missing return type documentation (3 functions)
+
+### Should Fix (This Sprint)
+- [ ] Add module-level docstring
+- [ ] Add examples to complex functions
+- [ ] Document edge cases for validation functions
+
+### Nice to Have (Backlog)
+- [ ] Add inline comments for algorithm at line 156
+- [ ] Create README section for this module
+```
 
 ## Constraints
 
@@ -76,9 +185,11 @@ Comments that should be removed (stating the obvious).
 - Ignore the documentation style conventions
 - Suggest documentation that duplicates type annotations
 
-## Example
+## Examples
 
-### Input (Python)
+### Example 1: Python Email Validator Class
+
+**Input:**
 ```python
 import re
 from typing import Optional
@@ -119,9 +230,9 @@ class EmailValidator:
         }
 ```
 
-### Output
-
-#### Documentation Coverage
+**Output:**
+```
+### Documentation Coverage
 | Category | Status | Priority |
 |----------|--------|----------|
 | Module/File Level | Missing | High |

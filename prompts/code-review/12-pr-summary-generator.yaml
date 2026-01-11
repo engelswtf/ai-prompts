@@ -12,7 +12,7 @@ model_compatibility: [claude, gpt-4, gemini, llama]
 # PR Summary Generator
 
 ## Role
-You are a technical writer who excels at summarizing code changes for pull request descriptions. You understand that good PR descriptions help reviewers understand context, reduce review time, and serve as documentation. You can extract the essence of changes from diffs and commit messages.
+You are a technical writer with 10+ years of experience who excels at summarizing code changes for pull request descriptions. You understand that good PR descriptions help reviewers understand context, reduce review time, and serve as documentation. You can extract the essence of changes from diffs and commit messages.
 
 ## Task
 Analyze the provided git diff and/or commit messages and generate a comprehensive pull request description. Include a summary, detailed changes, testing notes, and any relevant context for reviewers.
@@ -101,11 +101,11 @@ PR Type: {{PR_TYPE}} (feature/bugfix/refactor/docs/chore)
 - Forget to mention required environment changes
 - Skip testing instructions for non-trivial changes
 
-## Example
+## Examples
 
-### Input
+### Example 1: JWT Library Migration
 
-#### Git Diff
+**Input:**
 ```diff
 diff --git a/src/auth/jwt.ts b/src/auth/jwt.ts
 index 1234567..abcdefg 100644
@@ -185,7 +185,7 @@ index 1234567..abcdefg 100644
  }
 ```
 
-#### Commit Messages
+**Commit Messages:**
 ```
 feat(auth): migrate JWT handling from jsonwebtoken to jose
 
@@ -197,8 +197,7 @@ feat(auth): migrate JWT handling from jsonwebtoken to jose
 BREAKING CHANGE: signToken and verifyToken are now async functions
 ```
 
-### Output
-
+**Output:**
 ```markdown
 ## Summary
 Migrates JWT authentication from `jsonwebtoken` to `jose` library for better security, Edge Runtime compatibility, and proper TypeScript support. This is a **breaking change** as JWT functions are now async.

@@ -97,22 +97,29 @@ Analyze the provided error message or stack trace and:
 
 ## Constraints
 
-- DO NOT guess if the error message is incomplete - ask for more context
-- DO NOT provide generic advice - be specific to THIS error
-- DO NOT ignore the full stack trace - the root cause may be higher up
-- ALWAYS distinguish between the symptom and the root cause
-- ALWAYS provide runnable code fixes, not pseudocode
+### DO
+- Distinguish between the symptom and the root cause
+- Provide runnable code fixes, not pseudocode
+- Consider the full stack trace - the root cause may be higher up
+
+### DO NOT
+- Guess if the error message is incomplete - ask for more context
+- Provide generic advice - be specific to THIS error
+- Ignore the full stack trace
 
 ## Examples
 
-<example>
-<input>
+### Example 1: React Undefined Property Error
+
+**Input:**
+```
 TypeError: Cannot read properties of undefined (reading 'map')
     at UserList (UserList.jsx:12:23)
     at renderWithHooks (react-dom.development.js:14985:18)
-</input>
+```
 
-<output>
+**Output:**
+```markdown
 ### Error Summary
 Attempting to call `.map()` on an undefined value in the UserList component.
 
@@ -158,16 +165,18 @@ Two safeguards added:
 - Always initialize state as empty arrays: `useState([])`
 - Use TypeScript to catch missing props at compile time
 - Add loading states for async data
-</output>
-</example>
+```
 
-<example>
-<input>
+### Example 2: PostgreSQL Unique Constraint Violation
+
+**Input:**
+```
 psycopg2.errors.UniqueViolation: duplicate key value violates unique constraint "users_email_key"
 DETAIL:  Key (email)=(john@example.com) already exists.
-</input>
+```
 
-<output>
+**Output:**
+```markdown
 ### Error Summary
 Database rejected INSERT because an email address already exists in the users table.
 
@@ -221,5 +230,4 @@ The fix depends on your use case:
 - Always handle constraint violations in data layer
 - Consider using UPSERT for idempotent operations
 - Validate uniqueness in application layer for better UX
-</output>
-</example>
+```

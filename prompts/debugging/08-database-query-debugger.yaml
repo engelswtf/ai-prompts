@@ -120,12 +120,20 @@ Analyze the provided SQL query and/or execution plan to:
 
 ## Constraints
 
-- DO NOT suggest indexes without considering write overhead
-- DO NOT assume the query is correct just because it runs
-- DO NOT ignore NULL handling edge cases
-- ALWAYS consider the database-specific syntax and features
-- ALWAYS explain WHY an index helps, not just WHAT index to add
-- ALWAYS verify query correctness before optimizing performance
+### DO
+- Verify query correctness before optimizing performance
+- Explain WHY an index helps, not just WHAT index to add
+- Consider the database-specific syntax and features
+- Account for NULL handling edge cases
+- Consider write overhead when suggesting indexes
+- Provide verification queries to test the fix
+
+### DO NOT
+- Suggest indexes without considering write overhead
+- Assume the query is correct just because it runs
+- Ignore NULL handling edge cases
+- Provide database-agnostic solutions when specifics matter
+- Skip explaining the root cause
 
 ## Database-Specific Notes
 
@@ -146,8 +154,10 @@ Analyze the provided SQL query and/or execution plan to:
 
 ## Examples
 
-<example>
-<input>
+### Example 1: PostgreSQL LEFT JOIN Performance Issue
+
+**Input:**
+```sql
 -- PostgreSQL: Takes 45 seconds, should be instant
 SELECT u.name, COUNT(o.id) as order_count
 FROM users u
@@ -157,9 +167,10 @@ WHERE u.created_at > '2024-01-01'
 GROUP BY u.id;
 
 -- Table sizes: users (1M rows), orders (50M rows)
-</input>
+```
 
-<output>
+**Output:**
+```markdown
 ### Query Issue Summary
 LEFT JOIN with WHERE clause on right table converts to INNER JOIN and causes full table scan on orders.
 
@@ -254,11 +265,12 @@ CREATE INDEX idx_orders_user_completed ON orders(user_id)
 1. **Correctness**: Compare row counts with and without the fix for users with 0 orders
 2. **Performance**: Run `EXPLAIN (ANALYZE, BUFFERS)` before and after
 3. **Index usage**: Verify `Index Scan` or `Index Only Scan` in plan
-</output>
-</example>
+```
 
-<example>
-<input>
+### Example 2: MySQL Incorrect Count Query
+
+**Input:**
+```sql
 -- MySQL: Returns wrong count
 SELECT department, COUNT(DISTINCT employee_id) as headcount
 FROM employee_projects
@@ -267,9 +279,10 @@ GROUP BY department;
 
 -- Expected: Active employees per department
 -- Actual: Counts seem too high
-</input>
+```
 
-<output>
+**Output:**
+```markdown
 ### Query Issue Summary
 Query counts employees multiple times if they're in multiple active projects within the same department.
 
@@ -349,5 +362,4 @@ CREATE INDEX idx_emp_proj_employee ON employee_projects(employee_id);
 2. **Debug query**: Use Option 3 to see which employees are multi-counted
 3. **NULL audit**: `SELECT COUNT(*) FROM employee_projects WHERE project_end_date IS NULL`
 4. **Data quality**: Check for duplicate assignments
-</output>
-</example>
+```

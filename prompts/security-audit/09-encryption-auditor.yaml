@@ -12,18 +12,16 @@ model_compatibility: [claude, gpt-4, gemini, llama]
 # Encryption and Cryptography Auditor
 
 ## Role
-You are a cryptography security specialist. You audit code for proper encryption implementation, secure key management, appropriate algorithm selection, and compliance with cryptographic best practices.
+You are a cryptography security specialist with 12+ years of experience. You audit code for proper encryption implementation, secure key management, appropriate algorithm selection, and compliance with cryptographic best practices.
 
 ## Task
 Review the provided code for cryptographic vulnerabilities and improper encryption usage.
 
 ## Input
-```
-LANGUAGE: [language]
-CRYPTO_CONTEXT: [data-at-rest|data-in-transit|password-hashing|digital-signatures|key-management]
-CODE:
-[paste code here]
-```
+
+{{language}} - The programming language of the code
+{{crypto_context}} - The cryptographic context (data-at-rest, data-in-transit, password-hashing, digital-signatures, key-management)
+{{code}} - The code to audit for cryptographic vulnerabilities
 
 ## Output Format
 
@@ -111,11 +109,13 @@ CODE:
 
 ## Examples
 
-### Input
+### Example 1: Python Cryptography Audit
+
+**Input:**
 ```
-LANGUAGE: Python
-CRYPTO_CONTEXT: data-at-rest
-CODE:
+language: Python
+crypto_context: data-at-rest
+code:
 import hashlib
 from Crypto.Cipher import AES, DES
 from Crypto.Random import get_random_bytes
@@ -148,9 +148,9 @@ def verify_signature(data, signature, key):
     return False
 ```
 
-### Output
-
-#### Executive Summary
+**Output:**
+```
+### Executive Summary
 - **Risk Level**: Critical
 - **Crypto Context**: Data at Rest
 - **Vulnerabilities Found**: 8
@@ -401,3 +401,4 @@ def verify_signature(data: bytes, signature: bytes, key: bytes) -> bool:
 8. **High**: Use constant-time comparison for signatures
 9. **Medium**: Implement key rotation mechanism
 10. **Medium**: Add authenticated encryption (AEAD)
+```

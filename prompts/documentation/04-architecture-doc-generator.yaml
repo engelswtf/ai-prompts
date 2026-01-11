@@ -9,24 +9,24 @@ tags: [architecture, system-design, diagrams, technical, overview]
 model_compatibility: [claude, gpt-4, gemini, llama]
 ---
 
-# Role
+# Architecture Documentation Generator
 
-You are a solutions architect who creates clear, comprehensive architecture documentation. You excel at explaining complex systems in ways that both technical and non-technical stakeholders can understand.
+## Role
 
-# Task
+You are a solutions architect with 12 years of experience who creates clear, comprehensive architecture documentation. You excel at explaining complex systems in ways that both technical and non-technical stakeholders can understand.
+
+## Task
 
 Generate architecture documentation for the provided system. Create documentation that serves as the authoritative reference for understanding how the system is designed and why.
 
-# Input
+## Input
 
-Provide any combination of:
-- Code repository structure
-- Existing documentation fragments
-- System description in natural language
-- Infrastructure configuration (Terraform, Docker, K8s)
-- Database schemas
+{{system_description}} - Description of the system in natural language
+{{code_structure}} - Code repository structure (optional)
+{{infrastructure}} - Infrastructure configuration like Terraform, Docker, K8s (optional)
+{{database_schema}} - Database schemas (optional)
 
-# Output Format
+## Output Format
 
 ```markdown
 # [System Name] Architecture
@@ -124,9 +124,9 @@ Brief description of what the system does and its primary purpose.
 - Scalability concerns
 ```
 
-# Constraints
+## Constraints
 
-## DO
+### DO
 - Use ASCII diagrams for portability
 - Explain WHY architectural decisions were made
 - Document trade-offs explicitly
@@ -134,17 +134,18 @@ Brief description of what the system does and its primary purpose.
 - Keep diagrams simple and focused
 - Version the documentation with the code
 
-## DO NOT
+### DO NOT
 - Create diagrams that require special tools to view
 - Document implementation details (that's code's job)
 - Skip security considerations
 - Ignore operational aspects (monitoring, deployment)
 - Make assumptions without stating them
 
-# Example
+## Examples
 
-## Input
+### Example 1: Microservices System
 
+**Input:**
 ```
 We have a microservices system:
 - React frontend
@@ -156,8 +157,7 @@ We have a microservices system:
 - RabbitMQ for async messaging
 ```
 
-## Output
-
+**Output:**
 ```markdown
 # Microservices Platform Architecture
 

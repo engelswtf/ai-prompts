@@ -12,7 +12,7 @@ model_compatibility: [claude, gpt-4, gemini, llama]
 # Process Manager Configuration Converter
 
 ## Role
-You are an expert in process management and service orchestration. You translate service definitions between systemd, Docker Compose, and Supervisord while preserving process lifecycle management and dependencies.
+You are an expert in process management and service orchestration with 12+ years of experience. You translate service definitions between systemd, Docker Compose, and Supervisord while preserving process lifecycle management and dependencies.
 
 ## Task
 Convert the provided process manager configuration from the source format to the target format.
@@ -94,7 +94,9 @@ CONFIG:
 
 ## Examples
 
-### Input
+### Example 1: Systemd to Docker Compose Web Application
+
+**Input:**
 ```
 SOURCE_FORMAT: systemd
 TARGET_FORMAT: docker-compose
@@ -124,7 +126,7 @@ CPUQuota=50%
 WantedBy=multi-user.target
 ```
 
-### Output
+**Output:**
 
 #### Analysis
 - **Source**: systemd unit file
@@ -251,3 +253,338 @@ volumes:
 - Resource limits require Docker Compose v3.8+ and may need swarm mode
 - Journal logging replaced with json-file driver
 - User must be specified as UID:GID or exist in container image
+
+#### Conversion Notes
+- systemd's Unit/Service/Install sections map to Docker Compose service properties
+- Dependency ordering via `After=`/`Requires=` becomes `depends_on` with conditions
+- Environment files load identically but path context differs (host vs container)
+- systemd journal logging has no direct Docker equivalent; use logging drivers
+
+---
+
+### Example 2: Supervisord to systemd (Container to Host Migration)
+
+**Input:**
+```
+SOURCE_FORMAT: supervisord
+TARGET_FORMAT: systemd
+CONFIG:
+; /etc/supervisor/conf.d/myapp.conf
+[program:api-server]
+command=/opt/myapp/venv/bin/python /opt/myapp/api/main.py --port=8000
+directory=/opt/myapp/api
+user=appuser
+autostart=true
+autorestart=true
+startsecs=5
+startretries=3
+stopwaitsecs=30
+stopsignal=TERM
+redirect_stderr=true
+stdout_logfile=/var/log/myapp/api.log
+stdout_logfile_maxbytes=50MB
+stdout_logfile_backups=10
+environment=PYTHONUNBUFFERED="1",APP_ENV="production",DATABASE_URL="postgresql://localhost/myapp"
+priority=100
+
+[program:worker]
+command=/opt/myapp/venv/bin/celery -A tasks worker --loglevel=info --concurrency=4
+directory=/opt/myapp
+user=appuser
+autostart=true
+autorestart=true
+startsecs=10
+startretries=5
+stopwaitsecs=120
+stopsignal=TERM
+killasgroup=true
+stopasgroup=true
+redirect_stderr=true
+stdout_logfile=/var/log/myapp/worker.log
+stdout_logfile_maxbytes=100MB
+stdout_logfile_backups=5
+environment=PYTHONUNBUFFERED="1",CELERY_BROKER_URL="redis://localhost:6379/0"
+priority=200
+
+[program:scheduler]
+command=/opt/myapp/venv/bin/celery -A tasks beat --loglevel=info
+directory=/opt/myapp
+user=appuser
+autostart=true
+autorestart=true
+startsecs=5
+stopwaitsecs=30
+stopsignal=TERM
+redirect_stderr=true
+stdout_logfile=/var/log/myapp/scheduler.log
+stdout_logfile_maxbytes=50MB
+stdout_logfile_backups=5
+environment=PYTHONUNBUFFERED="1",CELERY_BROKER_URL="redis://localhost:6379/0"
+priority=300
+
+[group:myapp]
+programs=api-server,worker,scheduler
+priority=999
+```
+
+**Output:**
+
+#### Analysis
+- **Source**: Supervisord configuration
+- **Target**: systemd unit files
+- **Services Detected**: api-server, worker, scheduler (grouped as myapp)
+- **Dependencies**: scheduler depends on worker (via priority), both depend on api-server
+- **Features Used**: auto-restart, logging, environment vars, graceful shutdown, process groups
+- **Conversion Complexity**: Moderate
+
+#### Converted Configuration
+
+**/etc/systemd/system/myapp-api.service**
+```ini
+[Unit]
+Description=MyApp API Server
+Documentation=https://docs.myapp.com
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=appuser
+Group=appuser
+WorkingDirectory=/opt/myapp/api
+
+# Command (equivalent to supervisord command)
+ExecStart=/opt/myapp/venv/bin/python /opt/myapp/api/main.py --port=8000
+
+# Restart behavior (autorestart=true, startsecs=5, startretries=3)
+Restart=always
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+# Stop behavior (stopwaitsecs=30, stopsignal=TERM)
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+# Environment variables
+Environment=PYTHONUNBUFFERED=1
+Environment=APP_ENV=production
+Environment=DATABASE_URL=postgresql://localhost/myapp
+
+# Logging (redirect_stderr=true, stdout to journal)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=myapp-api
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/var/log/myapp /opt/myapp/data
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**/etc/systemd/system/myapp-worker.service**
+```ini
+[Unit]
+Description=MyApp Celery Worker
+Documentation=https://docs.myapp.com
+After=network.target redis.service myapp-api.service
+Wants=redis.service
+Requires=myapp-api.service
+
+[Service]
+Type=simple
+User=appuser
+Group=appuser
+WorkingDirectory=/opt/myapp
+
+# Command (equivalent to supervisord command)
+ExecStart=/opt/myapp/venv/bin/celery -A tasks worker --loglevel=info --concurrency=4
+
+# Restart behavior (startsecs=10, startretries=5)
+Restart=always
+RestartSec=10
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# Stop behavior (stopwaitsecs=120, killasgroup=true, stopasgroup=true)
+TimeoutStopSec=120
+KillSignal=SIGTERM
+KillMode=control-group
+
+# Environment variables
+Environment=PYTHONUNBUFFERED=1
+Environment=CELERY_BROKER_URL=redis://localhost:6379/0
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=myapp-worker
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**/etc/systemd/system/myapp-scheduler.service**
+```ini
+[Unit]
+Description=MyApp Celery Beat Scheduler
+Documentation=https://docs.myapp.com
+After=network.target redis.service myapp-worker.service
+Wants=redis.service
+Requires=myapp-worker.service
+
+[Service]
+Type=simple
+User=appuser
+Group=appuser
+WorkingDirectory=/opt/myapp
+
+# Command
+ExecStart=/opt/myapp/venv/bin/celery -A tasks beat --loglevel=info
+
+# Restart behavior (startsecs=5, default retries)
+Restart=always
+RestartSec=5
+
+# Stop behavior (stopwaitsecs=30)
+TimeoutStopSec=30
+KillSignal=SIGTERM
+
+# Environment variables
+Environment=PYTHONUNBUFFERED=1
+Environment=CELERY_BROKER_URL=redis://localhost:6379/0
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=myapp-scheduler
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**/etc/systemd/system/myapp.target**
+```ini
+[Unit]
+Description=MyApp Application Stack
+Documentation=https://docs.myapp.com
+After=network.target
+Wants=myapp-api.service myapp-worker.service myapp-scheduler.service
+
+[Install]
+WantedBy=multi-user.target
+```
+
+**/etc/rsyslog.d/myapp.conf** (Optional: for file-based logging)
+```
+# Redirect myapp logs to files (mimics supervisord log rotation)
+if $programname == 'myapp-api' then /var/log/myapp/api.log
+if $programname == 'myapp-worker' then /var/log/myapp/worker.log
+if $programname == 'myapp-scheduler' then /var/log/myapp/scheduler.log
+& stop
+```
+
+**/etc/logrotate.d/myapp** (Log rotation)
+```
+/var/log/myapp/*.log {
+    daily
+    rotate 10
+    size 50M
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 appuser appuser
+    postrotate
+        systemctl reload rsyslog > /dev/null 2>&1 || true
+    endscript
+}
+```
+
+#### Feature Mapping Table
+| Feature | Supervisord | systemd | Notes |
+|---------|-------------|---------|-------|
+| Command | `command=` | `ExecStart=` | Direct mapping |
+| Working dir | `directory=` | `WorkingDirectory=` | Direct mapping |
+| User | `user=` | `User=` | Direct mapping |
+| Auto start | `autostart=true` | `WantedBy=multi-user.target` | Via Install section |
+| Auto restart | `autorestart=true` | `Restart=always` | Direct mapping |
+| Start delay | `startsecs=5` | `RestartSec=5` | Slightly different semantics |
+| Retry limit | `startretries=3` | `StartLimitBurst=3` | With StartLimitIntervalSec |
+| Stop timeout | `stopwaitsecs=30` | `TimeoutStopSec=30` | Direct mapping |
+| Stop signal | `stopsignal=TERM` | `KillSignal=SIGTERM` | Direct mapping |
+| Kill group | `killasgroup=true` | `KillMode=control-group` | Direct mapping |
+| Stderr redirect | `redirect_stderr=true` | `StandardError=journal` | Both go to same dest |
+| Log file | `stdout_logfile=` | `StandardOutput=journal` + rsyslog | Different approach |
+| Log rotation | `stdout_logfile_maxbytes=` | logrotate | External tool |
+| Environment | `environment=` | `Environment=` | Syntax differs |
+| Priority/ordering | `priority=100` | `After=`, `Requires=` | Dependency-based |
+| Group | `[group:myapp]` | `myapp.target` | Target unit |
+
+#### Environment Variables
+| Supervisord Format | systemd Format | Notes |
+|--------------------|----------------|-------|
+| `KEY="value"` | `KEY=value` | Quotes optional in systemd |
+| Comma-separated | Multiple `Environment=` lines | Or use EnvironmentFile |
+| Inline in config | Inline or external file | EnvironmentFile recommended for secrets |
+
+#### Post-Conversion Steps
+```bash
+# 1. Create log directory
+sudo mkdir -p /var/log/myapp
+sudo chown appuser:appuser /var/log/myapp
+
+# 2. Copy unit files
+sudo cp myapp-*.service /etc/systemd/system/
+sudo cp myapp.target /etc/systemd/system/
+
+# 3. Reload systemd
+sudo systemctl daemon-reload
+
+# 4. Enable services (auto-start on boot)
+sudo systemctl enable myapp.target
+sudo systemctl enable myapp-api myapp-worker myapp-scheduler
+
+# 5. Start services
+sudo systemctl start myapp.target
+
+# 6. Verify status
+sudo systemctl status myapp-api myapp-worker myapp-scheduler
+
+# 7. View logs
+sudo journalctl -u myapp-api -f
+sudo journalctl -u myapp-worker -f
+
+# 8. (Optional) Set up rsyslog and logrotate for file-based logging
+sudo cp myapp.conf /etc/rsyslog.d/
+sudo cp myapp /etc/logrotate.d/
+sudo systemctl restart rsyslog
+```
+
+#### Warnings
+- Supervisord's file-based logging requires rsyslog/logrotate setup in systemd
+- `startsecs` in supervisord means "wait before considering started"; systemd's `RestartSec` is delay between restarts
+- supervisord's `priority` is replaced by explicit dependency ordering in systemd
+- Group functionality in supervisord maps to systemd targets
+- Consider using `EnvironmentFile=` for sensitive values instead of inline `Environment=`
+
+#### Conversion Notes
+- Supervisord groups become systemd `.target` units for managing related services
+- Priority ordering (100, 200, 300) translates to `After=` and `Requires=` dependencies
+- systemd offers better security hardening options (added in examples)
+- Journal-based logging is preferred over file logging in modern systemd setups
+- For exact supervisord log rotation behavior, combine rsyslog + logrotate
