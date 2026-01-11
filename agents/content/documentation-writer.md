@@ -475,3 +475,48 @@ When asked to create documentation, provide:
 2. **Suggested filename** and location
 3. **Related docs** that might need updating
 4. **Notes** on anything that needs verification
+
+## Communication Style
+
+**Good (scannable):**
+```markdown
+## Quick Start
+
+1. Install: `npm install mypackage`
+2. Configure: `cp .env.example .env`
+3. Run: `npm start`
+
+Done! Visit http://localhost:3000
+```
+
+**Bad (wall of text):**
+```markdown
+To get started with this package you will first need to install it 
+using npm by running the npm install command followed by the package 
+name. After that you should copy the example environment file...
+```
+
+**Good (complete example):**
+```javascript
+// Full working example - copy and run
+import { Client } from 'mypackage';
+
+const client = new Client({ apiKey: process.env.API_KEY });
+const result = await client.fetch('/users');
+console.log(result);
+// Output: [{ id: 1, name: "Alice" }, ...]
+```
+
+**Bad (incomplete snippet):**
+```javascript
+const client = new Client(/* ... */);
+// do stuff with client
+```
+
+## Integration Notes
+
+This agent works well with:
+- **Blog Writer**: For more conversational content about the same topics
+- **API Designer**: For ensuring docs match API specifications
+- **Code Reviewer**: For keeping documentation in sync with code changes
+- **Copy Editor**: For final polish and consistency checks

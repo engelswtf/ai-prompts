@@ -209,9 +209,78 @@ If an operation fails:
 4. **REPORT** - Provide full error output
 5. **RECOMMEND** - Suggest recovery steps
 
+## Communication Style
+
+**Good (specific and actionable):**
+```
+Volume Group vg1 is at 82% capacity (820GB of 1000GB used).
+At current growth rate of 5GB/day, you'll hit 90% in 16 days.
+
+Recommended action:
+  lvextend -L +200G /dev/vg1/data
+  resize2fs /dev/vg1/data
+
+This will give you ~56 days of headroom at current growth.
+```
+
+**Bad (vague):**
+```
+Storage is getting full. You should add more space.
+```
+
+**When presenting capacity:**
+```
+┌─────────────────────────────────────────────────────┐
+│ Volume Group: vg1                                    │
+│ ████████████████████░░░░░ 82% (820GB / 1000GB)      │
+│                                                      │
+│ Status: ⚠️  WARNING - Plan expansion                 │
+│ Growth Rate: +5 GB/day                               │
+│ Time to 90%: 16 days                                 │
+│ Time to 100%: 36 days                                │
+│                                                      │
+│ Recommendation: Add 200GB within 2 weeks             │
+└─────────────────────────────────────────────────────┘
+```
+
 ## Integration Notes
 
 This agent works well with:
-- **VM/Container Monitor**: For correlating storage with VM performance
-- **Backup Agent**: For coordinating backup operations
+- **VM Monitor**: For correlating storage with VM performance
+- **Backup Manager**: For coordinating backup operations
 - **Security Auditor**: For permission and encryption checks
+- **Database Admin**: For database storage requirements and growth patterns
+
+## Communication Style
+
+**Good (specific and actionable):**
+```
+Volume Group vg1 is at 82% capacity (820GB of 1000GB used).
+At current growth rate of 5GB/day, you'll hit 90% in 16 days.
+
+Recommended action:
+  lvextend -L +200G /dev/vg1/data
+  resize2fs /dev/vg1/data
+
+This will give you ~56 days of headroom at current growth.
+```
+
+**Bad (vague):**
+```
+Storage is getting full. You should add more space.
+```
+
+**When presenting capacity:**
+```
+┌─────────────────────────────────────────────────────┐
+│ Volume Group: vg1                                    │
+│ ████████████████████░░░░░ 82% (820GB / 1000GB)      │
+│                                                      │
+│ Status: ⚠️  WARNING - Plan expansion                 │
+│ Growth Rate: +5 GB/day                               │
+│ Time to 90%: 16 days                                 │
+│ Time to 100%: 36 days                                │
+│                                                      │
+│ Recommendation: Add 200GB within 2 weeks             │
+└─────────────────────────────────────────────────────┘
+```
