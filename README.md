@@ -1,8 +1,8 @@
 # AI Prompts & Agents Collection
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Prompts](https://img.shields.io/badge/Prompts-62-green.svg)](#prompt-packs)
-[![Agents](https://img.shields.io/badge/Agents-8-purple.svg)](#agent-packs)
+[![Prompts](https://img.shields.io/badge/Prompts-110-green.svg)](#prompt-packs)
+[![Agents](https://img.shields.io/badge/Agents-28-purple.svg)](#agent-packs)
 
 A free, open-source collection of high-quality AI prompts and agent configurations for developers. Battle-tested, model-agnostic, and ready for production use.
 
@@ -22,24 +22,25 @@ curl -O https://raw.githubusercontent.com/engelswtf/ai-prompts/main/prompts/debu
 
 | Pack | Prompts | Description |
 |------|---------|-------------|
-| [Debugging](prompts/debugging/) | 14 | Error analysis, stack traces, memory leaks, race conditions |
-| [Code Review](prompts/code-review/) | 12 | Security scanning, performance review, code smells, PR summaries |
-| [Documentation](prompts/documentation/) | 10 | READMEs, API docs, changelogs, architecture docs |
-| [Config Translator](prompts/config-translator/) | 8 | Docker↔K8s, JSON↔YAML, CI/CD converters |
-| [Security Audit](prompts/security-audit/) | 10 | OWASP scanning, auth review, dependency checks |
-| [Log Analysis](prompts/log-analysis/) | 8 | Log summarization, anomaly detection, timeline reconstruction |
+| [Debugging](prompts/debugging/) | 19 | Error analysis, stack traces, memory leaks, race conditions |
+| [Code Review](prompts/code-review/) | 17 | Security scanning, performance review, code smells, PR summaries |
+| [Documentation](prompts/documentation/) | 18 | READMEs, API docs, changelogs, architecture docs |
+| [Config Translator](prompts/config-translator/) | 20 | Docker↔K8s, JSON↔YAML, CI/CD converters |
+| [Security Audit](prompts/security-audit/) | 18 | OWASP scanning, auth review, dependency checks |
+| [Log Analysis](prompts/log-analysis/) | 18 | Log summarization, anomaly detection, timeline reconstruction |
 
-**Total: 62 prompts**
+**Total: 110 prompts**
 
 ## Agent Packs
 
 | Pack | Agents | Description |
 |------|--------|-------------|
-| [Infrastructure](agents/infrastructure/) | 3 | Storage Manager, VM Monitor, Security Auditor |
-| [Development](agents/development/) | 3 | Code Builder, DevOps Helper, Code Reviewer |
-| [Content](agents/content/) | 2 | Blog Writer, Documentation Writer |
+| [Infrastructure](agents/infrastructure/) | 7 | Storage Manager, VM Monitor, Security Auditor, Backup Manager, Network Monitor, Container Orchestrator, Database Admin |
+| [Development](agents/development/) | 7 | Code Builder, DevOps Helper, Code Reviewer, Test Engineer, API Designer, Performance Engineer, Refactoring Expert |
+| [Content](agents/content/) | 6 | Blog Writer, Documentation Writer, Social Media Writer, Newsletter Writer, Video Script Writer, Copy Editor |
+| [Research](agents/research/) | 8 | Market Researcher, Competitor Analyst, Tech Scout, Literature Reviewer, Trend Analyst, User Researcher, Data Analyst, Fact Checker |
 
-**Total: 8 agents**
+**Total: 28 agents**
 
 ## Format
 
